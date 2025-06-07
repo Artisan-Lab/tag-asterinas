@@ -75,8 +75,9 @@ pub use self::{error::Error, prelude::Result};
 unsafe fn init() {
     arch::enable_cpu_features();
 
-    // SAFETY: This function is called only once, before `allocator::init`
-    // and after memory regions are initialized.
+    // Safety Discharge:
+    // 1. `init()` is the sole caller and is guaranteed to be called once
+    // 2. Called after memory regions (in EARLY_INFO) are initialized
     unsafe { mm::frame::allocator::init_early_allocator() };
 
     #[cfg(target_arch = "x86_64")]
@@ -89,17 +90,24 @@ unsafe fn init() {
 
     logger::init();
 
-    // SAFETY:
-    // 1. They are only called once in the boot context of the BSP.
-    // 2. The number of CPUs are available because ACPI has been initialized.
+    // Safety Discharge:
+    // 1. Called in BSP boot context, before APs are started (boot::init_after_heap)
+    // 2. Called after ACPI (in EARLY_INFO) is initialized
     // 3. No CPU-local objects have been accessed yet.
     unsafe { cpu::init_on_bsp() };
 
-    // SAFETY: We are on the BSP and APs are not yet started.
+    // Safety Discharge:
+    // 1. `init()` is the sole caller and is guaranteed to be called once
+    // 2. Called in BSP boot context, before APs are started (boot::init_after_heap)
     let meta_pages = unsafe { mm::frame::meta::init() };
+
     // The frame allocator should be initialized immediately after the metadata
     // is initialized. Otherwise the boot page table can't allocate frames.
-    // SAFETY: This function is called only once.
+
+    // Safety Discharge:
+    // 1. `init()` is the sole caller and is guaranteed to be called once
+    // 2. Called after memory regions (in EARLY_INFO) are initialized
+    // 3. Called after early allocator is initialized (`mm::frame::allocator::init_early_allocator()`)
     unsafe { mm::frame::allocator::init() };
 
     mm::kspace::init_kernel_page_table(meta_pages);
@@ -110,6 +118,9 @@ unsafe fn init() {
 
     mm::dma::init();
 
+    // Safety Discharge:
+    // 1. `init()` is the sole caller and is guaranteed to be called once
+    // 2. Called in BSP boot context
     unsafe { arch::late_init_on_bsp() };
 
     #[cfg(target_arch = "x86_64")]
@@ -119,7 +130,8 @@ unsafe fn init() {
 
     smp::init();
 
-    // SAFETY: This function is called only once on the BSP.
+    // Safety Discharge:
+    // Called in BSP boot context and only once
     unsafe {
         mm::kspace::activate_kernel_page_table();
     }

@@ -227,14 +227,15 @@ pub unsafe fn activate_kernel_page_table() {
     let kpt = KERNEL_PAGE_TABLE
         .get()
         .expect("The kernel page table is not initialized yet");
-    // SAFETY: the kernel page table is initialized properly.
+    // Safety Discharge:
+    // Called after KERNEL_PAGE_TABLE is initialized
     unsafe {
         kpt.first_activate_unchecked();
         crate::arch::mm::tlb_flush_all_including_global();
     }
 
-    // SAFETY: the boot page table is OK to be dismissed now since
-    // the kernel page table is activated just now.
+    // Safety Discharge:
+    // Called after KERNEL_PAGE_TABLE is activated (first_activate_unchecked)
     unsafe {
         crate::mm::page_table::boot_pt::dismiss();
     }

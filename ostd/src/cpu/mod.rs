@@ -154,16 +154,15 @@ unsafe impl PinCurrentCpu for dyn InAtomicMode + '_ {}
 ///
 /// The caller must ensure that
 /// 1. We're in the boot context of the BSP and APs have not yet booted.
-/// 2. The number of available processors is available.
+/// 2. This function is called after the OS initializes the ACPI table.
 /// 3. No CPU-local objects have been accessed.
 pub(crate) unsafe fn init_on_bsp() {
-    let num_cpus = crate::arch::boot::smp::count_processors().unwrap_or(1);
-
-    // SAFETY: The safety is upheld by the caller and
-    // the correctness of the `get_num_processors` method.
     unsafe {
+        let num_cpus = crate::arch::boot::smp::count_processors().unwrap_or(1)
         local::copy_bsp_for_ap(num_cpus as usize);
 
+        // Safety Discharge:
+        // We're in the boot context of BSP, thus the current id is 0.
         set_this_cpu_id(0);
 
         // Note that `init_num_cpus` should be called after `copy_bsp_for_ap`.

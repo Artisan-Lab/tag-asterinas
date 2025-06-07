@@ -447,8 +447,8 @@ impl_frame_meta_for!(MetaPageMeta);
 ///
 /// # Safety
 ///
-/// This function should be called only once and only on the BSP,
-/// before any APs are started.
+/// 1. This function should be called only once.
+/// 2. This function should be called only on the BSP and before any APs are started.
 pub(crate) unsafe fn init() -> Segment<MetaPageMeta> {
     let max_paddr = {
         let regions = &crate::boot::EARLY_INFO.get().unwrap().memory_regions;

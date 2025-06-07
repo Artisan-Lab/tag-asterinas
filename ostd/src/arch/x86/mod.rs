@@ -59,8 +59,8 @@ static CPU_FEATURES: Once<FeatureInfo> = Once::new();
 ///
 /// # Safety
 ///
-/// This function must be called only once in the boot context of the
-/// bootstrapping processor.
+/// 1. This function must be called only once
+/// 2. This function must be called in the boot context of the bootstrapping processor.
 pub(crate) unsafe fn late_init_on_bsp() {
     // SAFETY: This function is only called once on BSP.
     unsafe { trap::init() };

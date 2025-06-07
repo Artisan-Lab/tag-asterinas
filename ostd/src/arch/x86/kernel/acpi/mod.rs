@@ -38,8 +38,12 @@ impl AcpiHandler for AcpiMemoryHandler {
     fn unmap_physical_region<T>(_region: &acpi::PhysicalMapping<Self, T>) {}
 }
 
-pub(crate) fn get_acpi_tables() -> Option<AcpiTables<AcpiMemoryHandler>> {
+/// Safety:
+/// This function needs to be called after the OS initializes the ACPI table.
+pub(crate) unsafe fn get_acpi_tables() -> Option<AcpiTables<AcpiMemoryHandler>> {
     let acpi_tables = match boot::EARLY_INFO.get().unwrap().acpi_arg {
+        // Safety Discharge:
+        // The address is parsed from authenticated boot data.
         BootloaderAcpiArg::Rsdp(addr) => unsafe {
             AcpiTables::from_rsdp(AcpiMemoryHandler {}, addr).unwrap()
         },

@@ -49,10 +49,10 @@ use crate::{
 };
 
 /// Counts the number of processors.
-///
+/// Safety:
 /// This function needs to be called after the OS initializes the ACPI table.
-pub(crate) fn count_processors() -> Option<u32> {
-    let acpi_tables = get_acpi_tables()?;
+pub(crate) unsafe fn count_processors() -> Option<u32> {
+    let acpi_tables = unsafe {get_acpi_tables()?};
     let madt_table = acpi_tables.find_table::<acpi::madt::Madt>().ok()?;
 
     // According to ACPI spec [1], "If this bit [the Enabled bit] is set the processor is ready for

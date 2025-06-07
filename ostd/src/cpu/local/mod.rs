@@ -189,15 +189,13 @@ static CPU_LOCAL_STORAGES: Once<&'static [Paddr]> = Once::new();
 ///
 /// # Safety
 ///
-/// This function must be called in the boot context of the BSP, at a time
+/// 1. This function must be called in the boot context of the BSP, at a time
 /// when the APs have not yet booted.
-///
-/// The CPU-local data on the BSP must not be used before calling this
+/// 2. The CPU-local data on the BSP must not be used before calling this
 /// function to copy it for the APs. Otherwise, the copied data will
 /// contain non-constant (also non-`Copy`) data, resulting in undefined
 /// behavior when it's loaded on the APs.
-///
-/// The caller must ensure that the `num_cpus` matches the number of all
+/// 3. The caller must ensure that the `num_cpus` matches the number of all
 /// CPUs that will access the CPU-local storage.
 pub(crate) unsafe fn copy_bsp_for_ap(num_cpus: usize) {
     let num_aps = num_cpus - 1; // BSP does not need allocated storage.

@@ -158,7 +158,7 @@ unsafe impl PinCurrentCpu for dyn InAtomicMode + '_ {}
 /// 3. No CPU-local objects have been accessed.
 pub(crate) unsafe fn init_on_bsp() {
     unsafe {
-        let num_cpus = crate::arch::boot::smp::count_processors().unwrap_or(1)
+        let num_cpus = crate::arch::boot::smp::count_processors().unwrap_or(1);
         local::copy_bsp_for_ap(num_cpus as usize);
 
         // Safety Discharge:

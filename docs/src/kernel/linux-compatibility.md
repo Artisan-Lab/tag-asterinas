@@ -15,7 +15,7 @@ support the loading of Linux kernel modules.
 ## System Calls
 
 At the time of writing,
-Asterinas implements 204 out of the 336 system calls
+Asterinas implements 213 out of the 336 system calls
 provided by Linux on x86-64 architecture.
 
 | Numbers | Names            | Is Implemented  |
@@ -46,7 +46,7 @@ provided by Linux on x86-64 architecture.
 | 23      | select           | ✅              |
 | 24      | sched_yield      | ✅              |
 | 25      | mremap           | ❌              |
-| 26      | msync            | ❌              |
+| 26      | msync            | ✅              |
 | 27      | mincore          | ❌              |
 | 28      | madvise          | ✅              |
 | 29      | shmget           | ❌              |
@@ -342,7 +342,9 @@ provided by Linux on x86-64 architecture.
 | 328	  | pwritev2         | ✅              |
 | 332     | statx            | ✅              |
 | 435	  | clone3           | ✅              |
+| 436	  | close_range      | ✅              |
 | 439     | faccessat2       | ✅              |
+| 441     | epoll_pwait2     | ✅              |
 
 ## File Systems
 

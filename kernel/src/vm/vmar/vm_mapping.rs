@@ -9,14 +9,14 @@ use core::{
 use align_ext::AlignExt;
 use ostd::{
     mm::{
-        tlb::TlbFlushOp, vm_space::VmItem, CachePolicy, FrameAllocOptions, PageFlags, PageProperty,
-        UFrame, VmSpace,
+        tlb::TlbFlushOp, CachePolicy, FrameAllocOptions, PageFlags, PageProperty, UFrame, VmSpace,
     },
     task::disable_preempt,
 };
 
 use super::{interval_set::Interval, RssType};
 use crate::{
+    fs::utils::Inode,
     prelude::*,
     thread::exception::PageFaultInfo,
     vm::{
@@ -43,7 +43,7 @@ use crate::{
 /// This type controls the actual mapping in the [`VmSpace`]. It is a linear
 /// type and cannot be [`Drop`]. To remove a mapping, use [`Self::unmap`].
 #[derive(Debug)]
-pub(super) struct VmMapping {
+pub struct VmMapping {
     /// The size of mapping, in bytes. The map size can even be larger than the
     /// size of VMO. Those pages outside VMO range cannot be read or write.
     ///
@@ -57,6 +57,11 @@ pub(super) struct VmMapping {
     /// The start of the virtual address maps to the start of the range
     /// specified in [`MappedVmo`].
     vmo: Option<MappedVmo>,
+    /// The inode of the file that backs the mapping.
+    ///
+    /// If the inode is `Some`, it means that the mapping is file-backed.
+    /// And the `vmo` field must be the page cache of the inode.
+    inode: Option<Arc<dyn Inode>>,
     /// Whether the mapping is shared.
     ///
     /// The updates to a shared mapping are visible among processes, or carried
@@ -84,6 +89,7 @@ impl VmMapping {
         map_size: NonZeroUsize,
         map_to_addr: Vaddr,
         vmo: Option<MappedVmo>,
+        inode: Option<Arc<dyn Inode>>,
         is_shared: bool,
         handle_page_faults_around: bool,
         perms: VmPerms,
@@ -92,6 +98,7 @@ impl VmMapping {
             map_size,
             map_to_addr,
             vmo,
+            inode,
             is_shared,
             handle_page_faults_around,
             perms,
@@ -101,6 +108,7 @@ impl VmMapping {
     pub(super) fn new_fork(&self) -> Result<VmMapping> {
         Ok(VmMapping {
             vmo: self.vmo.as_ref().map(|vmo| vmo.dup()).transpose()?,
+            inode: self.inode.clone(),
             ..*self
         })
     }
@@ -120,12 +128,17 @@ impl VmMapping {
         self.map_size.get()
     }
 
-    // Returns the permissions of pages in the mapping.
+    /// Returns the permissions of pages in the mapping.
     pub fn perms(&self) -> VmPerms {
         self.perms
     }
 
-    // Returns the mapping's RSS type.
+    /// Returns the inode of the file that backs the mapping.
+    pub fn inode(&self) -> Option<&Arc<dyn Inode>> {
+        self.inode.as_ref()
+    }
+
+    /// Returns the mapping's RSS type.
     pub fn rss_type(&self) -> RssType {
         if self.vmo.is_none() {
             RssType::RSS_ANONPAGES
@@ -170,7 +183,7 @@ impl VmMapping {
                     &preempt_guard,
                     &(page_aligned_addr..page_aligned_addr + PAGE_SIZE),
                 )?;
-                if let VmItem::Mapped { .. } = cursor.query().unwrap() {
+                if let (_, Some((_, _))) = cursor.query().unwrap() {
                     return Ok(rss_increment);
                 }
             }
@@ -186,16 +199,13 @@ impl VmMapping {
                 &(page_aligned_addr..page_aligned_addr + PAGE_SIZE),
             )?;
 
-            match cursor.query().unwrap() {
-                VmItem::Mapped {
-                    va,
-                    frame,
-                    mut prop,
-                } => {
+            let (va, item) = cursor.query().unwrap();
+            match item {
+                Some((frame, mut prop)) => {
                     if VmPerms::from(prop.flags).contains(page_fault_info.required_perms) {
                         // The page fault is already handled maybe by other threads.
                         // Just flush the TLB and return.
-                        TlbFlushOp::Address(va).perform_on_current();
+                        TlbFlushOp::Range(va).perform_on_current();
                         return Ok(0);
                     }
                     assert!(is_write);
@@ -217,7 +227,7 @@ impl VmMapping {
 
                     if self.is_shared || only_reference {
                         cursor.protect_next(PAGE_SIZE, |p| p.flags |= new_flags);
-                        cursor.flusher().issue_tlb_flush(TlbFlushOp::Address(va));
+                        cursor.flusher().issue_tlb_flush(TlbFlushOp::Range(va));
                         cursor.flusher().dispatch_tlb_flush();
                     } else {
                         let new_frame = duplicate_frame(&frame)?;
@@ -227,7 +237,7 @@ impl VmMapping {
                     }
                     cursor.flusher().sync_tlb_flush();
                 }
-                VmItem::NotMapped { .. } => {
+                None => {
                     // Map a new frame to the page fault address.
                     let (frame, is_readonly) = match self.prepare_page(address, is_write) {
                         Ok((frame, is_readonly)) => (frame, is_readonly),
@@ -338,7 +348,7 @@ impl VmMapping {
             let operate =
                 move |commit_fn: &mut dyn FnMut()
                     -> core::result::Result<UFrame, VmoCommitError>| {
-                    if let VmItem::NotMapped { .. } = cursor.query().unwrap() {
+                    if let (_, None) = cursor.query().unwrap() {
                         // We regard all the surrounding pages as accessed, no matter
                         // if it is really so. Then the hardware won't bother to update
                         // the accessed bit of the page table on following accesses.
@@ -411,12 +421,14 @@ impl VmMapping {
             map_to_addr: self.map_to_addr,
             map_size: NonZeroUsize::new(left_size).unwrap(),
             vmo: l_vmo,
+            inode: self.inode.clone(),
             ..self
         };
         let right = Self {
             map_to_addr: at,
             map_size: NonZeroUsize::new(right_size).unwrap(),
             vmo: r_vmo,
+            inode: self.inode,
             ..self
         };
 

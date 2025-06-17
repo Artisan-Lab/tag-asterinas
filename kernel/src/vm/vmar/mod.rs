@@ -13,7 +13,10 @@ use align_ext::AlignExt;
 use aster_rights::Rights;
 use ostd::{
     cpu::CpuId,
-    mm::{tlb::TlbFlushOp, PageFlags, PageProperty, VmSpace, MAX_USERSPACE_VADDR},
+    mm::{
+        tlb::TlbFlushOp, vm_space::CursorMut, PageFlags, PageProperty, VmSpace, MAX_USERSPACE_VADDR,
+    },
+    sync::RwMutexReadGuard,
     task::disable_preempt,
 };
 
@@ -22,6 +25,7 @@ use self::{
     vm_mapping::{MappedVmo, VmMapping},
 };
 use crate::{
+    fs::utils::Inode,
     prelude::*,
     process::{Process, ResourceType},
     thread::exception::PageFaultInfo,
@@ -160,6 +164,11 @@ impl VmarInner {
         let vm_mapping = self.vm_mappings.remove(key)?;
         self.total_vm -= vm_mapping.map_size();
         Some(vm_mapping)
+    }
+
+    /// Finds a set of [`VmMapping`]s that intersect with the provided range.
+    fn query(&self, range: &Range<Vaddr>) -> impl Iterator<Item = &VmMapping> {
+        self.vm_mappings.find(range)
     }
 
     /// Calculates the total amount of overlap between `VmMapping`s
@@ -311,6 +320,13 @@ impl Vmar_ {
             ROOT_VMAR_CAP_ADDR,
             array::from_fn(|_| PerCpuCounter::new()),
         )
+    }
+
+    fn query(&self, range: Range<usize>) -> VmarQueryGuard<'_> {
+        VmarQueryGuard {
+            vmar: self.inner.read(),
+            range,
+        }
     }
 
     fn protect(&self, perms: VmPerms, range: Range<usize>) -> Result<()> {
@@ -486,12 +502,11 @@ impl Vmar_ {
                 // Protect the mapping and copy to the new page table for COW.
                 cur_cursor.jump(base).unwrap();
                 new_cursor.jump(base).unwrap();
-                let mut op = |page: &mut PageProperty| {
-                    page.flags -= PageFlags::W;
-                };
-                let num_mapped =
-                    new_cursor.copy_from(&mut cur_cursor, vm_mapping.map_size(), &mut op);
-                rss_delta.add(vm_mapping.rss_type(), num_mapped as isize);
+
+                let num_copied =
+                    cow_copy_pt(&mut cur_cursor, &mut new_cursor, vm_mapping.map_size());
+
+                rss_delta.add(vm_mapping.rss_type(), num_copied as isize);
             }
             new_vmar_.add_rss_delta(rss_delta);
 
@@ -522,6 +537,44 @@ impl Vmar_ {
     }
 }
 
+/// Sets mappings in the source page table as read-only to trigger COW, and
+/// copies the mappings to the destination page table.
+///
+/// The copied range starts from `src`'s current position with the given
+/// `size`. The destination range starts from `dst`'s current position.
+///
+/// The number of physical frames copied is returned.
+fn cow_copy_pt(src: &mut CursorMut<'_>, dst: &mut CursorMut<'_>, size: usize) -> usize {
+    let start_va = src.virt_addr();
+    let end_va = start_va + size;
+    let mut remain_size = size;
+
+    let mut num_copied = 0;
+
+    let op = |page: &mut PageProperty| {
+        page.flags -= PageFlags::W;
+    };
+
+    while let Some(mapped_va) = src.find_next(remain_size) {
+        let (va, Some((frame, mut prop))) = src.query().unwrap() else {
+            panic!("Found mapped page but query failed");
+        };
+        debug_assert_eq!(mapped_va, va.start);
+
+        src.protect_next(end_va - mapped_va, op).unwrap();
+
+        dst.jump(mapped_va).unwrap();
+        op(&mut prop);
+        dst.map(frame, prop);
+
+        remain_size = end_va - src.virt_addr();
+
+        num_copied += 1;
+    }
+
+    num_copied
+}
+
 impl<R> Vmar<R> {
     /// The base address, i.e., the offset relative to the root VMAR.
     ///
@@ -547,6 +600,7 @@ impl<R> Vmar<R> {
 pub struct VmarMapOptions<'a, R1, R2> {
     parent: &'a Vmar<R1>,
     vmo: Option<Vmo<R2>>,
+    inode: Option<Arc<dyn Inode>>,
     perms: VmPerms,
     vmo_offset: usize,
     vmo_limit: usize,
@@ -571,6 +625,7 @@ impl<'a, R1, R2> VmarMapOptions<'a, R1, R2> {
         Self {
             parent,
             vmo: None,
+            inode: None,
             perms,
             vmo_offset: 0,
             vmo_limit: usize::MAX,
@@ -583,22 +638,30 @@ impl<'a, R1, R2> VmarMapOptions<'a, R1, R2> {
         }
     }
 
-    /// Binds a VMO to the mapping.
+    /// Binds a [`Vmo`] to the mapping.
     ///
-    /// If the mapping is a private mapping, its size may not be equal to that of the VMO.
-    /// For example, it is ok to create a mapping whose size is larger than
-    /// that of the VMO, although one cannot read from or write to the
-    /// part of the mapping that is not backed by the VMO.
+    /// If the mapping is a private mapping, its size may not be equal to that
+    /// of the [`Vmo`]. For example, it is OK to create a mapping whose size is
+    /// larger than that of the [`Vmo`], although one cannot read from or write
+    /// to the part of the mapping that is not backed by the [`Vmo`].
     ///
-    /// So you may wonder: what is the point of supporting such _oversized_
-    /// mappings?  The reason is two-fold.
-    ///  1. VMOs are resizable. So even if a mapping is backed by a VMO whose
-    ///     size is equal to that of the mapping initially, we cannot prevent
-    ///     the VMO from shrinking.
+    /// Such _oversized_ mappings are useful for two reasons:
+    ///  1. [`Vmo`]s are resizable. So even if a mapping is backed by a VMO
+    ///     whose size is equal to that of the mapping initially, we cannot
+    ///     prevent the VMO from shrinking.
     ///  2. Mappings are not allowed to overlap by default. As a result,
-    ///     oversized mappings can serve as a placeholder to prevent future
-    ///     mappings from occupying some particular address ranges accidentally.
+    ///     oversized mappings can reserve space for future expansions.
+    ///
+    /// The [`Vmo`] of a mapping will be implicitly set if [`Self::inode`] is
+    /// set.
+    ///
+    /// # Panics
+    ///
+    /// This function panics if an [`Inode`] is already provided.
     pub fn vmo(mut self, vmo: Vmo<R2>) -> Self {
+        if self.inode.is_some() {
+            panic!("Cannot set `vmo` when `inode` is already set");
+        }
         self.vmo = Some(vmo);
 
         self
@@ -673,7 +736,37 @@ impl<'a, R1, R2> VmarMapOptions<'a, R1, R2> {
     }
 }
 
-impl<'a, R1, R2> VmarMapOptions<'a, R1, R2>
+impl<R1> VmarMapOptions<'_, R1, Rights> {
+    /// Binds an [`Inode`] to the mapping.
+    ///
+    /// This is used for file-backed mappings. The provided file inode will be
+    /// mapped. See [`Self::vmo`] for details on the map size.
+    ///
+    /// If an [`Inode`] is provided, the [`Self::vmo`] must not be provided
+    /// again. The actually mapped [`Vmo`] will be the [`Inode`]'s page cache.
+    ///
+    /// # Panics
+    ///
+    /// This function panics if:
+    ///  - a [`Vmo`] or [`Inode`] is already provided;
+    ///  - the provided [`Inode`] does not have a page cache.
+    pub fn inode(mut self, inode: Arc<dyn Inode>) -> Self {
+        if self.vmo.is_some() {
+            panic!("Cannot set `inode` when `vmo` is already set");
+        }
+        self.vmo = Some(
+            inode
+                .page_cache()
+                .expect("Map an inode without page cache")
+                .to_dyn(),
+        );
+        self.inode = Some(inode);
+
+        self
+    }
+}
+
+impl<R1, R2> VmarMapOptions<'_, R1, R2>
 where
     Vmo<R2>: VmoRightsOp,
 {
@@ -687,6 +780,7 @@ where
         let Self {
             parent,
             vmo,
+            inode,
             perms,
             vmo_offset,
             vmo_limit,
@@ -745,6 +839,7 @@ where
             NonZeroUsize::new(map_size).unwrap(),
             map_to_addr,
             vmo,
+            inode,
             is_shared,
             handle_page_faults_around,
             perms,
@@ -793,6 +888,20 @@ where
     }
 }
 
+/// A guard that allows querying a [`Vmar`] for its mappings.
+pub struct VmarQueryGuard<'a> {
+    vmar: RwMutexReadGuard<'a, VmarInner>,
+    range: Range<usize>,
+}
+
+impl VmarQueryGuard<'_> {
+    /// Returns an iterator over the [`VmMapping`]s that intersect with the
+    /// provided range when calling [`Vmar::query`].
+    pub fn iter(&self) -> impl Iterator<Item = &VmMapping> {
+        self.vmar.query(&self.range)
+    }
+}
+
 /// Determines whether two ranges are intersected.
 /// returns false if one of the ranges has a length of 0
 pub fn is_intersected(range1: &Range<usize>, range2: &Range<usize>) -> bool {
@@ -832,5 +941,147 @@ impl RssDelta {
 
     pub(self) fn get(&self, rss_type: RssType) -> isize {
         self.0[rss_type as usize]
+    }
+}
+
+#[cfg(ktest)]
+mod test {
+    use ostd::{
+        mm::{CachePolicy, FrameAllocOptions},
+        prelude::*,
+    };
+
+    use super::*;
+
+    #[ktest]
+    fn test_cow_copy_pt() {
+        let vm_space = VmSpace::new();
+        let map_range = PAGE_SIZE..(PAGE_SIZE * 2);
+        let cow_range = 0..PAGE_SIZE * 512 * 512;
+        let page_property = PageProperty::new_user(PageFlags::RW, CachePolicy::Writeback);
+        let preempt_guard = disable_preempt();
+
+        // Allocates and maps a frame.
+        let frame = FrameAllocOptions::default().alloc_frame().unwrap();
+        let start_paddr = frame.start_paddr();
+        let frame_clone_for_assert = frame.clone();
+
+        vm_space
+            .cursor_mut(&preempt_guard, &map_range)
+            .unwrap()
+            .map(frame.into(), page_property); // Original frame moved here
+
+        // Confirms the initial mapping.
+        assert!(matches!(
+            vm_space.cursor(&preempt_guard, &map_range).unwrap().query().unwrap(),
+            (va, Some((frame, prop))) if va.start == map_range.start && frame.start_paddr() == start_paddr && prop.flags == PageFlags::RW
+        ));
+
+        // Creates a child page table with copy-on-write protection.
+        let child_space = VmSpace::new();
+        {
+            let mut child_cursor = child_space.cursor_mut(&preempt_guard, &cow_range).unwrap();
+            let mut parent_cursor = vm_space.cursor_mut(&preempt_guard, &cow_range).unwrap();
+            let num_copied = cow_copy_pt(&mut parent_cursor, &mut child_cursor, cow_range.len());
+            assert_eq!(num_copied, 1); // Only one page should be copied
+        };
+
+        // Confirms that parent and child VAs map to the same physical address.
+        {
+            let child_map_frame_addr = {
+                let (_, Some((frame, _))) = child_space
+                    .cursor(&preempt_guard, &map_range)
+                    .unwrap()
+                    .query()
+                    .unwrap()
+                else {
+                    panic!("Child mapping query failed");
+                };
+                frame.start_paddr()
+            };
+            let parent_map_frame_addr = {
+                let (_, Some((frame, _))) = vm_space
+                    .cursor(&preempt_guard, &map_range)
+                    .unwrap()
+                    .query()
+                    .unwrap()
+                else {
+                    panic!("Parent mapping query failed");
+                };
+                frame.start_paddr()
+            };
+            assert_eq!(child_map_frame_addr, parent_map_frame_addr);
+            assert_eq!(child_map_frame_addr, start_paddr);
+        }
+
+        // Unmaps the range from the parent.
+        vm_space
+            .cursor_mut(&preempt_guard, &map_range)
+            .unwrap()
+            .unmap(map_range.len());
+
+        // Confirms that the child VA remains mapped.
+        assert!(matches!(
+            child_space.cursor(&preempt_guard, &map_range).unwrap().query().unwrap(),
+            (va, Some((frame, prop)))  if va.start == map_range.start && frame.start_paddr() == start_paddr && prop.flags == PageFlags::R
+        ));
+
+        // Creates a sibling page table (from the now-modified parent).
+        let sibling_space = VmSpace::new();
+        {
+            let mut sibling_cursor = sibling_space
+                .cursor_mut(&preempt_guard, &cow_range)
+                .unwrap();
+            let mut parent_cursor = vm_space.cursor_mut(&preempt_guard, &cow_range).unwrap();
+            let num_copied = cow_copy_pt(&mut parent_cursor, &mut sibling_cursor, cow_range.len());
+            assert_eq!(num_copied, 0); // No pages should be copied
+        }
+
+        // Verifies that the sibling is unmapped as it was created after the parent unmapped the range.
+        assert!(matches!(
+            sibling_space
+                .cursor(&preempt_guard, &map_range)
+                .unwrap()
+                .query()
+                .unwrap(),
+            (_, None)
+        ));
+
+        // Drops the parent page table.
+        drop(vm_space);
+
+        // Confirms that the child VA remains mapped after the parent is dropped.
+        assert!(matches!(
+            child_space.cursor(&preempt_guard, &map_range).unwrap().query().unwrap(),
+            (va, Some((frame, prop)))  if va.start == map_range.start && frame.start_paddr() == start_paddr && prop.flags == PageFlags::R
+        ));
+
+        // Unmaps the range from the child.
+        child_space
+            .cursor_mut(&preempt_guard, &map_range)
+            .unwrap()
+            .unmap(map_range.len());
+
+        // Maps the range in the sibling using the third clone.
+        sibling_space
+            .cursor_mut(&preempt_guard, &map_range)
+            .unwrap()
+            .map(frame_clone_for_assert.into(), page_property);
+
+        // Confirms that the sibling mapping points back to the original frame's physical address.
+        assert!(matches!(
+            sibling_space.cursor(&preempt_guard, &map_range).unwrap().query().unwrap(),
+            (va, Some((frame, prop)))  if va.start == map_range.start && frame.start_paddr() == start_paddr && prop.flags == PageFlags::RW
+        ));
+
+        // Confirms that the child remains unmapped.
+        assert!(matches!(
+            child_space
+                .cursor(&preempt_guard, &map_range)
+                .unwrap()
+                .query()
+                .unwrap(),
+            (_, None)
+        ));
     }
 }

@@ -2,48 +2,50 @@
 
 use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
+use aster_rights::ReadDupOp;
 use ostd::sync::WaitQueue;
 
 use super::{
-    connected::{combine_io_events, Connected},
+    connected::Connected,
     init::Init,
+    socket::{SHUT_READ_EVENTS, SHUT_WRITE_EVENTS},
     UnixStreamSocket,
 };
 use crate::{
     events::IoEvents,
     fs::file_handle::FileLike,
     net::socket::{
-        unix::addr::{UnixSocketAddrBound, UnixSocketAddrKey},
+        unix::{
+            addr::{UnixSocketAddrBound, UnixSocketAddrKey},
+            cred::SocketCred,
+            stream::socket::OptionSet,
+        },
         util::{SockShutdownCmd, SocketAddr},
     },
     prelude::*,
-    process::signal::{PollHandle, Pollee},
+    process::signal::Pollee,
 };
 
 pub(super) struct Listener {
     backlog: Arc<Backlog>,
     is_write_shutdown: AtomicBool,
-    writer_pollee: Pollee,
 }
 
 impl Listener {
     pub(super) fn new(
         addr: UnixSocketAddrBound,
-        reader_pollee: Pollee,
-        writer_pollee: Pollee,
         backlog: usize,
         is_read_shutdown: bool,
         is_write_shutdown: bool,
+        pollee: Pollee,
     ) -> Self {
         let backlog = BACKLOG_TABLE
-            .add_backlog(addr, reader_pollee, backlog, is_read_shutdown)
+            .add_backlog(addr, pollee, backlog, is_read_shutdown)
             .unwrap();
-        writer_pollee.invalidate();
 
         Self {
             backlog,
             is_write_shutdown: AtomicBool::new(is_write_shutdown),
-            writer_pollee,
         }
     }
 
@@ -55,7 +57,9 @@ impl Listener {
         let connected = self.backlog.pop_incoming()?;
         let peer_addr = connected.peer_addr().into();
 
-        let socket = UnixStreamSocket::new_connected(connected, false);
+        // TODO: Update options for a newly-accepted socket
+        let options = OptionSet::new();
+        let socket = UnixStreamSocket::new_connected(connected, options, false);
         Ok((socket, peer_addr))
     }
 
@@ -63,35 +67,31 @@ impl Listener {
         self.backlog.set_backlog(backlog);
     }
 
-    pub(super) fn shutdown(&self, cmd: SockShutdownCmd) {
-        match cmd {
-            SockShutdownCmd::SHUT_WR | SockShutdownCmd::SHUT_RDWR => {
-                self.is_write_shutdown.store(true, Ordering::Relaxed);
-                self.writer_pollee.notify(IoEvents::ERR);
-            }
-            SockShutdownCmd::SHUT_RD => (),
+    pub(super) fn shutdown(&self, cmd: SockShutdownCmd, pollee: &Pollee) {
+        if cmd.shut_read() {
+            self.backlog.shutdown();
         }
 
-        match cmd {
-            SockShutdownCmd::SHUT_RD | SockShutdownCmd::SHUT_RDWR => {
-                self.backlog.shutdown();
-            }
-            SockShutdownCmd::SHUT_WR => (),
+        if cmd.shut_write() {
+            self.is_write_shutdown.store(true, Ordering::Relaxed);
+            pollee.notify(SHUT_WRITE_EVENTS);
         }
     }
 
-    pub(super) fn poll(&self, mask: IoEvents, mut poller: Option<&mut PollHandle>) -> IoEvents {
-        let reader_events = self.backlog.poll(mask, poller.as_deref_mut());
+    pub(super) fn is_read_shutdown(&self) -> bool {
+        self.backlog.is_shutdown()
+    }
 
-        let writer_events = self.writer_pollee.poll_with(mask, poller, || {
-            if self.is_write_shutdown.load(Ordering::Relaxed) {
-                IoEvents::ERR
-            } else {
-                IoEvents::empty()
-            }
-        });
+    pub(super) fn is_write_shutdown(&self) -> bool {
+        self.is_write_shutdown.load(Ordering::Relaxed)
+    }
 
-        combine_io_events(mask, reader_events, writer_events)
+    pub(super) fn check_io_events(&self) -> IoEvents {
+        self.backlog.check_io_events()
+    }
+
+    pub(super) fn cred(&self) -> &SocketCred<ReadDupOp> {
+        &self.backlog.listener_cred
     }
 }
 
@@ -131,8 +131,6 @@ impl BacklogTable {
             return None;
         }
 
-        // Note that the cached events can be correctly inherited from `Init`, so there is no need
-        // to explicitly call `Pollee::invalidate`.
         let new_backlog = Arc::new(Backlog::new(addr, pollee, backlog, is_shutdown));
         backlog_sockets.insert(addr_key, new_backlog.clone());
 
@@ -154,6 +152,7 @@ pub(super) struct Backlog {
     backlog: AtomicUsize,
     incoming_conns: SpinLock<Option<VecDeque<Connected>>>,
     wait_queue: WaitQueue,
+    listener_cred: SocketCred<ReadDupOp>,
 }
 
 impl Backlog {
@@ -170,6 +169,7 @@ impl Backlog {
             backlog: AtomicUsize::new(backlog),
             incoming_conns: SpinLock::new(incoming_sockets),
             wait_queue: WaitQueue::new(),
+            listener_cred: SocketCred::<ReadDupOp>::new_current(),
         }
     }
 
@@ -206,26 +206,24 @@ impl Backlog {
     fn shutdown(&self) {
         *self.incoming_conns.lock() = None;
 
-        self.pollee.notify(IoEvents::HUP);
+        self.pollee.notify(SHUT_READ_EVENTS);
         self.wait_queue.wake_all();
     }
 
-    fn poll(&self, mask: IoEvents, poller: Option<&mut PollHandle>) -> IoEvents {
-        self.pollee
-            .poll_with(mask, poller, || self.check_io_events())
+    fn is_shutdown(&self) -> bool {
+        self.incoming_conns.lock().is_none()
     }
 
     fn check_io_events(&self) -> IoEvents {
-        let incoming_conns = self.incoming_conns.lock();
-
-        if let Some(conns) = &*incoming_conns {
-            if !conns.is_empty() {
-                IoEvents::IN
-            } else {
-                IoEvents::empty()
-            }
+        if self
+            .incoming_conns
+            .lock()
+            .as_ref()
+            .is_some_and(|conns| !conns.is_empty())
+        {
+            IoEvents::IN
         } else {
-            IoEvents::HUP
+            IoEvents::empty()
         }
     }
 }
@@ -234,6 +232,7 @@ impl Backlog {
     pub(super) fn push_incoming(
         &self,
         init: Init,
+        pollee: Pollee,
     ) -> core::result::Result<Connected, (Error, Init)> {
         let mut locked_incoming_conns = self.incoming_conns.lock();
 
@@ -257,7 +256,11 @@ impl Backlog {
             ));
         }
 
-        let (client_conn, server_conn) = init.into_connected(self.addr.clone());
+        let (client_conn, server_conn) = init.into_connected(
+            self.addr.clone(),
+            pollee,
+            self.listener_cred.dup().restrict(),
+        );
 
         incoming_conns.push_back(server_conn);
         self.pollee.notify(IoEvents::IN);

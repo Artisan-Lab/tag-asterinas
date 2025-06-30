@@ -291,6 +291,8 @@ pub enum Infallible {}
 /// - `dst` must be [valid] for writes of `len` bytes.
 ///
 /// [valid]: crate::mm::io#safety
+#[safety::precond::ReadLen(src, len)]
+#[safety::precond::WriteLen(dst, len)]
 unsafe fn memcpy(dst: *mut u8, src: *const u8, len: usize) {
     // This method is implemented by calling `volatile_copy_memory`. Note that even with the
     // "volatile" keyword, data races are still considered undefined behavior (UB) in both the Rust
@@ -323,6 +325,8 @@ unsafe fn memcpy(dst: *mut u8, src: *const u8, len: usize) {
 /// - `dst` must either be [valid] for writes of `len` bytes or be in user space for `len` bytes.
 ///
 /// [valid]: crate::mm::io#safety
+#[safety::precond::ReadLen(src, len)]
+#[safety::precond::ValidWriteLen(dst, len)]
 unsafe fn memcpy_fallible(dst: *mut u8, src: *const u8, len: usize) -> usize {
     // SAFETY: The safety is upheld by the caller.
     let failed_bytes = unsafe { __memcpy_fallible(dst, src, len) };
@@ -339,6 +343,8 @@ unsafe fn memcpy_fallible(dst: *mut u8, src: *const u8, len: usize) -> usize {
 /// - `dst` must either be [valid] for writes of `len` bytes or be in user space for `len` bytes.
 ///
 /// [valid]: crate::mm::io#safety
+#[safety::precond::ValidWriteLen(dst, len)] //or
+#[safety::precond::UserSpaceLen(dst, len)]
 unsafe fn memset_fallible(dst: *mut u8, value: u8, len: usize) -> usize {
     // SAFETY: The safety is upheld by the caller.
     let failed_bytes = unsafe { __memset_fallible(dst, value, len) };
@@ -470,6 +476,7 @@ impl<'a> VmReader<'a, Infallible> {
     /// `ptr` must be [valid] for reads of `len` bytes during the entire lifetime `a`.
     ///
     /// [valid]: crate::mm::io#safety
+    #[safety::precond::UserSpaceLen(dst, len)]
     pub unsafe fn from_kernel_space(ptr: *const u8, len: usize) -> Self {
         // Rust is allowed to give the reference to a zero-sized object a very small address,
         // falling out of the kernel virtual address space range.
@@ -569,6 +576,7 @@ impl VmReader<'_, Fallible> {
     /// # Safety
     ///
     /// The virtual address range `ptr..ptr + len` must be in user space.
+    #[safety::precond::UserSpaceLen(ptr, len)]
     pub unsafe fn from_user_space(ptr: *const u8, len: usize) -> Self {
         debug_assert!(ptr.addr().checked_add(len).unwrap() <= MAX_USERSPACE_VADDR);
 
@@ -711,6 +719,7 @@ impl<'a> VmWriter<'a, Infallible> {
     /// `ptr` must be [valid] for writes of `len` bytes during the entire lifetime `a`.
     ///
     /// [valid]: crate::mm::io#safety
+    #[safety::precond::ValidWriteLen(ptr, len)]
     pub unsafe fn from_kernel_space(ptr: *mut u8, len: usize) -> Self {
         // If casting a zero sized slice to a pointer, the pointer may be null
         // and does not reside in our kernel space range.
@@ -826,6 +835,7 @@ impl VmWriter<'_, Fallible> {
     /// # Safety
     ///
     /// `ptr` must be in user space for `len` bytes.
+    #[safety::precond::UserSpaceLen(ptr, len)]
     pub unsafe fn from_user_space(ptr: *mut u8, len: usize) -> Self {
         debug_assert!(ptr.addr().checked_add(len).unwrap() <= MAX_USERSPACE_VADDR);
 

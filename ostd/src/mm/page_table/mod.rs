@@ -361,6 +361,7 @@ impl PageTable<KernelPtConfig> {
     ///
     /// The caller must ensure that the protection operation does not affect
     /// the memory safety of the kernel.
+    #[safety::precond::ProtectMemorySafe(vaddr)]
     pub unsafe fn protect_flush_tlb(
         &self,
         vaddr: &Range<Vaddr>,
@@ -388,6 +389,7 @@ impl<C: PageTableConfig> PageTable<C> {
         }
     }
 
+    #[safety::global::CallOnce]
     pub(in crate::mm) unsafe fn first_activate_unchecked(&self) {
         // SAFETY: The safety is upheld by the caller.
         unsafe { self.root.first_activate() };
@@ -441,6 +443,7 @@ impl<C: PageTableConfig> PageTable<C> {
     /// Create a new reference to the same page table.
     /// The caller must ensure that the kernel page table is not copied.
     /// This is only useful for IOMMU page tables. Think twice before using it in other cases.
+    #[safety::precond::Uncoppied(self)]
     pub unsafe fn shallow_copy(&self) -> Self {
         PageTable {
             root: self.root.clone(),
@@ -571,6 +574,7 @@ pub trait PageTableEntryTrait:
 /// # Safety
 ///
 /// The safety preconditions are same as those of [`AtomicUsize::from_ptr`].
+#[safety::precond::SameAs(AtomicUsize::from_ptr)]
 pub unsafe fn load_pte<E: PageTableEntryTrait>(ptr: *mut E, ordering: Ordering) -> E {
     // SAFETY: The safety is upheld by the caller.
     let atomic = unsafe { AtomicUsize::from_ptr(ptr.cast()) };
@@ -583,6 +587,7 @@ pub unsafe fn load_pte<E: PageTableEntryTrait>(ptr: *mut E, ordering: Ordering) 
 /// # Safety
 ///
 /// The safety preconditions are same as those of [`AtomicUsize::from_ptr`].
+#[safety::precond::SameAs(AtomicUsize::from_ptr)]
 pub unsafe fn store_pte<E: PageTableEntryTrait>(ptr: *mut E, new_val: E, ordering: Ordering) {
     let new_raw = new_val.as_usize();
     // SAFETY: The safety is upheld by the caller.

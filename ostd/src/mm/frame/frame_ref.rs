@@ -21,9 +21,9 @@ impl<M: AnyFrameMeta + ?Sized> FrameRef<'_, M> {
     /// # Safety
     ///
     /// The caller must ensure that:
-    ///  - the frame outlives the created reference, so that the reference can
+    /// 1. the frame outlives the created reference, so that the reference can
     ///    be seen as borrowed from that frame.
-    ///  - the type of the [`FrameRef`] (`M`) matches the borrowed frame.
+    /// 2. the type of the [`FrameRef`] (`M`) matches the borrowed frame.
     pub(in crate::mm) unsafe fn borrow_paddr(raw: Paddr) -> Self {
         Self {
             // SAFETY: The caller ensures the safety.

@@ -216,6 +216,7 @@ impl<'a, 'rcu, C: PageTableConfig> Entry<'a, 'rcu, C> {
     /// # Safety
     ///
     /// The caller must ensure that the index is within the bounds of the node.
+    #[safety::precond::PteIndexBounded(guard, idx)]
     pub(super) unsafe fn new_at(guard: &'a mut PageTableGuard<'rcu, C>, idx: usize) -> Self {
         // SAFETY: The index is within the bound.
         let pte = unsafe { guard.read_pte(idx) };

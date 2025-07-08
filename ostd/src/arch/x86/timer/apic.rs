@@ -135,6 +135,7 @@ fn init_periodic_mode_config() {
     // Disable PIT
     drop(irq);
 
+    #[concur::ctxt(irq)]
     fn pit_callback(_trap_frame: &TrapFrame) {
         static IN_TIME: AtomicU64 = AtomicU64::new(0);
         static APIC_FIRST_COUNT: AtomicU64 = AtomicU64::new(0);

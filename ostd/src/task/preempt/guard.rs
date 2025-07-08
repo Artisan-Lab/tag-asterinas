@@ -6,6 +6,7 @@ use crate::{sync::GuardTransfer, task::atomic_mode::InAtomicMode};
 #[clippy::has_significant_drop]
 #[must_use]
 #[derive(Debug)]
+#[concur::lock(no_preempt)]
 pub struct DisabledPreemptGuard {
     // This private field prevents user from constructing values of this type directly.
     _private: (),

@@ -11,9 +11,8 @@ use core::{
 
 use bitflags::bitflags;
 use cfg_if::cfg_if;
+use int_to_c_enum::TryFromInt;
 use log::debug;
-use num_derive::FromPrimitive;
-use num_traits::FromPrimitive;
 use spin::Once;
 use x86::bits64::segmentation::wrfsbase;
 use x86_64::registers::{
@@ -23,7 +22,10 @@ use x86_64::registers::{
 };
 
 use crate::{
-    arch::CPU_FEATURES,
+    arch::{
+        trap::{RawUserContext, TrapFrame},
+        CPU_FEATURES,
+    },
     task::scheduler,
     trap::call_irq_callback_functions,
     user::{ReturnReason, UserContextApi, UserContextApiInternal},
@@ -39,17 +41,40 @@ cfg_if! {
 
 pub use x86::cpuid;
 
-pub use crate::arch::trap::{
-    GeneralRegs as RawGeneralRegs, TrapFrame, UserContext as RawUserContext,
-};
-
-/// Cpu context, including both general-purpose registers and FPU state.
+/// Userspace CPU context, including both general-purpose registers and FPU state.
 #[derive(Clone, Default, Debug)]
 #[repr(C)]
 pub struct UserContext {
     user_context: RawUserContext,
     fpu_state: FpuState,
     cpu_exception_info: CpuExceptionInfo,
+}
+
+/// General registers.
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
+#[repr(C)]
+#[expect(missing_docs)]
+pub struct GeneralRegs {
+    pub rax: usize,
+    pub rbx: usize,
+    pub rcx: usize,
+    pub rdx: usize,
+    pub rsi: usize,
+    pub rdi: usize,
+    pub rbp: usize,
+    pub rsp: usize,
+    pub r8: usize,
+    pub r9: usize,
+    pub r10: usize,
+    pub r11: usize,
+    pub r12: usize,
+    pub r13: usize,
+    pub r14: usize,
+    pub r15: usize,
+    pub rip: usize,
+    pub rflags: usize,
+    pub fsbase: usize,
+    pub gsbase: usize,
 }
 
 /// CPU exception information.
@@ -66,12 +91,12 @@ pub struct CpuExceptionInfo {
 
 impl UserContext {
     /// Returns a reference to the general registers.
-    pub fn general_regs(&self) -> &RawGeneralRegs {
+    pub fn general_regs(&self) -> &GeneralRegs {
         &self.user_context.general
     }
 
     /// Returns a mutable reference to the general registers
-    pub fn general_regs_mut(&mut self) -> &mut RawGeneralRegs {
+    pub fn general_regs_mut(&mut self) -> &mut GeneralRegs {
         &mut self.user_context.general
     }
 
@@ -250,7 +275,8 @@ macro_rules! define_cpu_exception {
     ( $([ $name: ident = $exception_id:tt, $exception_type:tt]),* ) => {
         /// CPU exception.
         #[expect(non_camel_case_types)]
-        #[derive(Debug, Copy, Clone, Eq, PartialEq, FromPrimitive)]
+        #[derive(Debug, Copy, Clone, Eq, PartialEq, TryFromInt)]
+        #[repr(u16)]
         pub enum CpuException {
             $(
                 #[doc = concat!("The ", stringify!($name), " exception")]
@@ -340,7 +366,7 @@ impl CpuException {
 
     /// Maps a `trap_num` to its corresponding CPU exception.
     pub fn to_cpu_exception(trap_num: u16) -> Option<CpuException> {
-        FromPrimitive::from_u16(trap_num)
+        CpuException::try_from(trap_num).ok()
     }
 }
 

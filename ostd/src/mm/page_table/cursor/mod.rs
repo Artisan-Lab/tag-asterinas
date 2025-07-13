@@ -445,7 +445,6 @@ impl<'rcu, C: PageTableConfig> CursorMut<'rcu, C> {
     /// The caller should ensure that
     ///  - the range being mapped does not affect kernel's memory safety;
     ///  - the physical address to be mapped is valid and safe to use;
-
     pub unsafe fn map(&mut self, item: C::Item) -> Result<(), PageTableFrag<C>> {
         assert!(self.0.va < self.0.barrier_va.end);
         let (pa, level, prop) = C::item_into_raw(item);

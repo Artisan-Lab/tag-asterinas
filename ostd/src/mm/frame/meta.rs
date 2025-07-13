@@ -305,7 +305,7 @@ impl MetaSlot {
     /// # Safety
     ///
     /// The caller must have already held a reference to the frame.
-    #[safety_macro::Memo(SlotFrameRefHeld, memo = "precond::SlotFrameRefHeld(self)")]
+    #[safety::Memo(SlotFrameRefHeld, memo = "precond::SlotFrameRefHeld(self)")]
     // #[safety::precond::SlotFrameRefHeld(self)]
     pub(super) unsafe fn inc_ref_count(&self) {
         let last_ref_cnt = self.ref_count.fetch_add(1, Ordering::Relaxed);
@@ -333,11 +333,11 @@ impl MetaSlot {
     ///
     /// The returned pointer should not be dereferenced as mutable unless having
     /// exclusive access to the metadata slot.
-    #[safety_macro::Memo(
+    #[safety::Memo(
         PostToFunc,
         memo = "precond::PostToFunc(NULL, MetaSlot::write_meta, self, *)"
     )]
-    #[safety_macro::Memo(MutExclusive, memo = "postcond::MutExclusive(ReturnValue)")]
+    #[safety::Memo(MutExclusive, memo = "postcond::MutExclusive(ReturnValue)")]
     // #[safety::precond::PostToFunc(NULL, MetaSlot::write_meta, self, *)]
     // #[safety::postcond::MutExclusive(ReturnValue)]
     pub(super) unsafe fn dyn_meta_ptr(&self) -> *mut dyn AnyFrameMeta {
@@ -363,11 +363,11 @@ impl MetaSlot {
     ///  - the initialized metadata is of type `M`;
     ///  - the returned pointer should not be dereferenced as mutable unless
     ///    having exclusive access to the metadata slot.
-    #[safety_macro::Memo(
+    #[safety::Memo(
         PriorToFunc,
         memo = "postcond::PriorToFunc(MetaSlot::write_meta, ReturnValue, Instance(M))"
     )]
-    #[safety_macro::Memo(MutExclusive, memo = "postcond::MutExclusive(ReturnValue)")]
+    #[safety::Memo(MutExclusive, memo = "postcond::MutExclusive(ReturnValue)")]
     // #[safety::postcond::PriorToFunc(MetaSlot::write_meta, ReturnValue, Instance(M))]
     // #[safety::postcond::MutExclusive(ReturnValue)]
     pub(super) fn as_meta_ptr<M: AnyFrameMeta>(&self) -> *mut M {
@@ -379,7 +379,7 @@ impl MetaSlot {
     /// # Safety
     ///
     /// The caller should have exclusive access to the metadata slot's fields.
-    #[safety_macro::Memo(MutExclusive, memo = "global::MutExclusive(self)")]
+    #[safety::Memo(MutExclusive, memo = "global::MutExclusive(self)")]
     // #[safety::global::MutExclusive(self)]
     pub(super) unsafe fn write_meta<M: AnyFrameMeta>(&self, metadata: M) {
         const { assert!(size_of::<M>() <= FRAME_METADATA_MAX_SIZE) };
@@ -405,8 +405,8 @@ impl MetaSlot {
     /// The caller should ensure that:
     ///  - the reference count is `0` (so we are the sole owner of the frame);
     ///  - the metadata is initialized;
-    #[safety_macro::Memo(Equal, memo = "precond::Equal(self.ref_count, 0)")]
-    #[safety_macro::Memo(Initialized, memo = "precond::Initialized(self.storage)")]
+    #[safety::Memo(Equal, memo = "precond::Equal(self.ref_count, 0)")]
+    #[safety::Memo(Initialized, memo = "precond::Initialized(self.storage)")]
     // #[safety::precond::Equal(self.ref_count, 0)]
     // #[safety::precond::Initialized(self.storage)]
     pub(super) unsafe fn drop_last_in_place(&self) {
@@ -432,8 +432,8 @@ impl MetaSlot {
     ///  - the reference count is `0` (so we are the sole owner of the frame);
     ///  - the metadata is initialized;
     ///
-    #[safety_macro::Memo(Equal, memo = "precond::Equal(self.ref_count, 0)")]
-    #[safety_macro::Memo(Initialized, memo = "precond::Initialized(self.storage)")]
+    #[safety::Memo(Equal, memo = "precond::Equal(self.ref_count, 0)")]
+    #[safety::Memo(Initialized, memo = "precond::Initialized(self.storage)")]
     // #[safety::precond::Equal(self.ref_count, 0)]
     // #[safety::precond::Initialized(self.storage)]
     pub(super) unsafe fn drop_meta_in_place(&self) {
@@ -478,8 +478,8 @@ impl_frame_meta_for!(MetaPageMeta);
 ///
 /// 1. This function should be called only once.
 /// 2. This function should be called only on the BSP and before any APs are started.
-#[safety_macro::Memo(BSP_BUT_AP, memo = "global::Context(BSP_BUT_AP)")]
-#[safety_macro::Memo(CallOnce, memo = "global::CallOnce")]
+#[safety::Memo(BSP_BUT_AP, memo = "global::Context(BSP_BUT_AP)")]
+#[safety::Memo(CallOnce, memo = "global::CallOnce")]
 // #[safety::global::CallOnce]
 // #[safety::global::Context(BSP_BUT_AP)] //todo:: need definition of BSP_BUT_AP
 pub(crate) unsafe fn init() -> Segment<MetaPageMeta> {

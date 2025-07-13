@@ -148,7 +148,7 @@ pub fn is_kernel_interrupted() -> bool {
 /// Handle traps (only from kernel).
 #[no_mangle]
 // #[concur::ctxt(irq)]
-#[safety_macro::Memo(Irq)]
+#[safety::Memo(Irq)]
 extern "sysv64" fn trap_handler(f: &mut TrapFrame) {
     fn enable_local_if(cond: bool) {
         if cond {

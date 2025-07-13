@@ -1265,6 +1265,7 @@ dependencies = [
  "ostd-pod",
  "ostd-test",
  "riscv",
+ "safety-lib",
  "sbi-rt",
  "smallvec",
  "spin",
@@ -1530,6 +1531,32 @@ name = "rustversion"
 version = "1.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eded382c5f5f786b989652c49544c4877d9f015cc22e145a5ea8ea66c2921cd2"
+
+[[package]]
+name = "safety-lib"
+version = "0.2.1"
+source = "git+https://github.com/Artisan-Lab/tag-std?rev=4bdff279c921a7c765a747826f187b795db82a5b#4bdff279c921a7c765a747826f187b795db82a5b"
+dependencies = [
+ "safety-macro",
+]
+
+[[package]]
+name = "safety-macro"
+version = "0.2.0"
+source = "git+https://github.com/Artisan-Lab/tag-std?rev=4bdff279c921a7c765a747826f187b795db82a5b#4bdff279c921a7c765a747826f187b795db82a5b"
+dependencies = [
+ "safety-parser",
+]
+
+[[package]]
+name = "safety-parser"
+version = "0.2.0"
+source = "git+https://github.com/Artisan-Lab/tag-std?rev=4bdff279c921a7c765a747826f187b795db82a5b#4bdff279c921a7c765a747826f187b795db82a5b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.101",
+]
 
 [[package]]
 name = "sbi-rt"

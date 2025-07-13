@@ -205,9 +205,9 @@ fn dfs_acquire_lock<C: PageTableConfig>(
 ///
 /// The caller must ensure that the nodes in the specified sub-tree are locked
 /// and all guards are forgotten.
-#[safety_macro::Memo(SubtreeLocked, memo = "precond::SubtreeLocked(cur_node)")]
+#[safety::Memo(SubtreeLocked, memo = "precond::SubtreeLocked(cur_node)")]
 // #[safety::precond::SubtreeLocked(cur_node)]
-#[safety_macro::Memo(
+#[safety::Memo(
     SubtreeGuardForgotten,
     memo = "precond::SubtreeGuardForgotten(cur_node)"
 )]
@@ -258,9 +258,9 @@ unsafe fn dfs_release_lock<'rcu, C: PageTableConfig>(
 ///
 /// This function must not be called upon a shared node, e.g., the second-
 /// top level nodes that the kernel space and user space share.
-#[safety_macro::Memo(SubtreeLocked, memo = "precond::SubtreeLocked(sub_tree)")]
+#[safety::Memo(SubtreeLocked, memo = "precond::SubtreeLocked(sub_tree)")]
 // #[safety::precond::SubtreeLocked(sub_tree)]
-#[safety_macro::Memo(
+#[safety::Memo(
     SubtreeGuardForgotten,
     memo = "precond::SubtreeGuardForgotten(sub_tree)"
 )]

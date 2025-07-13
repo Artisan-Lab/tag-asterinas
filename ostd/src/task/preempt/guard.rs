@@ -7,7 +7,7 @@ use crate::{sync::GuardTransfer, task::atomic_mode::InAtomicMode};
 #[must_use]
 #[derive(Debug)]
 // #[concur::lock(no_preempt)]
-// #[safety_macro::Memo(LockNoInterrupt)] // FIXME: support safety attr on struct
+// #[safety::Memo(LockNoInterrupt)] // FIXME: support safety attr on struct
 pub struct DisabledPreemptGuard {
     // This private field prevents user from constructing values of this type directly.
     _private: (),

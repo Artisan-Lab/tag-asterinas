@@ -20,11 +20,12 @@
 #![feature(sync_unsafe_cell)]
 #![feature(trait_upcasting)]
 #![feature(unbounded_shifts)]
-#![feature(stmt_expr_attributes)]
-#![feature(proc_macro_hygiene)]
 #![expect(internal_features)]
 #![no_std]
 #![warn(missing_docs)]
+// Required by tag-std / rapx
+#![feature(stmt_expr_attributes, proc_macro_hygiene, register_tool)]
+#![register_tool(rapx)]
 
 extern crate alloc;
 

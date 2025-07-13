@@ -243,7 +243,7 @@ pub(super) unsafe fn init(base_register_vaddr: NonNull<u8>) {
 }
 
 // #[concur::ctxt(irq)]
-#[safety_macro::Memo(Irq)]
+#[safety::Memo(Irq)]
 fn iommu_fault_handler(_frame: &TrapFrame) {
     let mut fault_event_regs = FAULT_EVENT_REGS.get().unwrap().lock();
 

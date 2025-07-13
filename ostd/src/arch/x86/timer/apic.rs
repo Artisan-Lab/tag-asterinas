@@ -137,7 +137,7 @@ fn init_periodic_mode_config() {
     drop(irq);
 
     // #[concur::ctxt(irq)]
-    #[safety_macro::Memo(Irq)]
+    #[safety::Memo(Irq)]
     fn pit_callback(_trap_frame: &TrapFrame) {
         static IN_TIME: AtomicU64 = AtomicU64::new(0);
         static APIC_FIRST_COUNT: AtomicU64 = AtomicU64::new(0);

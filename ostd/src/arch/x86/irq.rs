@@ -53,7 +53,7 @@ impl IrqRemapping {
 // FIXME: Mark this as unsafe. See
 // <https://github.com/asterinas/asterinas/issues/1120#issuecomment-2748696592>.
 // #[concur::irq(enable)]
-#[safety_macro::Memo(IrqEnable)]
+#[safety::Memo(IrqEnable)]
 pub(crate) fn enable_local() {
     x86_64::instructions::interrupts::enable();
     // When emulated with QEMU, interrupts may not be delivered if a STI instruction is immediately
@@ -71,7 +71,7 @@ pub(crate) fn enable_local() {
 // FIXME: Mark this as unsafe. See
 // <https://github.com/asterinas/asterinas/issues/1120#issuecomment-2748696592>.
 // #[concur::irq(enable)]
-#[safety_macro::Memo(IrqEnable)]
+#[safety::Memo(IrqEnable)]
 pub(crate) fn enable_local_and_halt() {
     // SAFETY:
     // 1. `sti` is safe to use because its safety requirement is upheld by the caller.
@@ -88,7 +88,7 @@ pub(crate) fn enable_local_and_halt() {
 }
 
 // #[concur::irq(disable)]
-#[safety_macro::Memo(IrqDisable)]
+#[safety::Memo(IrqDisable)]
 pub(crate) fn disable_local() {
     x86_64::instructions::interrupts::disable();
 }

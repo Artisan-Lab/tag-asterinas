@@ -344,8 +344,7 @@ check: initramfs $(CARGO_OSDK)
 	@typos
 
 RAPX_EXIT_AND_EMIT ?= abort_and_emit
-RAPX_RUSTFLAGS ?= --check-cfg cfg(ktest) --cfg ktest -Zcrate-attr=feature(register_tool) -Zcrate-attr=register_tool(rapx) \
-						 -L/home/gh-zjp-CN/tag-std/safety-tool/target/safety-tool/lib --extern safety_macro
+RAPX_RUSTFLAGS ?= --check-cfg cfg(ktest) --cfg ktest
 
 .PHONY: rapx
 rapx:

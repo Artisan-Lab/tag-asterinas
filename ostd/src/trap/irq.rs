@@ -225,7 +225,7 @@ pub fn disable_local() -> DisabledLocalIrqGuard {
 #[must_use]
 #[derive(Debug)]
 // #[concur::lock(no_interrupt)]
-// #[safety_macro::Memo(LockNoInterrupt)] // FIXME: support safety attr on struct
+// #[safety::Memo(LockNoInterrupt)] // FIXME: support safety attr on struct
 pub struct DisabledLocalIrqGuard {
     was_enabled: bool,
 }

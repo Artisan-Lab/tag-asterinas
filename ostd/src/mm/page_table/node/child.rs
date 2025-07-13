@@ -48,9 +48,9 @@ impl<C: PageTableConfig> Child<C> {
     ///  - must not be referenced by a living [`ChildRef`].
     ///
     /// The level must match the original level of the child.
-    #[safety_macro::Memo(TaggedCallOnce, memo = "global::TaggedCallOnce(pte)")]
+    #[safety::Memo(TaggedCallOnce, memo = "global::TaggedCallOnce(pte)")]
     // #[safety::global::TaggedCallOnce(pte)]
-    #[safety_macro::Memo(NoChildRef, memo = "precond::NoChildRef(pte)")]
+    #[safety::Memo(NoChildRef, memo = "precond::NoChildRef(pte)")]
     // #[safety::precond::NoChildRef(pte)]
     pub(super) unsafe fn from_pte(pte: C::E, level: PagingLevel) -> Self {
         if !pte.is_present() {
@@ -94,9 +94,9 @@ impl<C: PageTableConfig> ChildRef<'_, C> {
     ///
     /// The provided level must be the same with the level of the page table
     /// node that contains this PTE.
-    #[safety_macro::Memo(PteLevelMatch, memo = "precond::PteLevelMatch(level)")]
+    #[safety::Memo(PteLevelMatch, memo = "precond::PteLevelMatch(level)")]
     // #[safety::precond::PteLevelMatch(level)]
-    #[safety_macro::Memo(ChildRefOutLive, memo = "precond::ChildRefOutLive(ReturnValue)")]
+    #[safety::Memo(ChildRefOutLive, memo = "precond::ChildRefOutLive(ReturnValue)")]
     // #[safety::precond::ChildRefOutLive(ReturnValue)]
     pub(super) unsafe fn from_pte(pte: &C::E, level: PagingLevel) -> Self {
         if !pte.is_present() {

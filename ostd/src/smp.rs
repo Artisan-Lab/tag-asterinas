@@ -80,7 +80,8 @@ cpu_local! {
     static CALL_QUEUES: SpinLock<VecDeque<fn()>> = SpinLock::new(VecDeque::new());
 }
 
-#[concur::ctxt(irq)]
+// #[concur::ctxt(irq)]
+#[safety::Memo(Irq)]
 fn do_inter_processor_call(_trapframe: &TrapFrame) {
     // No races because we are in IRQs.
     let this_cpu_id = crate::cpu::CpuId::current_racy();

@@ -242,7 +242,8 @@ pub(super) unsafe fn init(base_register_vaddr: NonNull<u8>) {
         .call_once(|| SpinLock::new(unsafe { FaultEventRegisters::new(base_register_vaddr) }));
 }
 
-#[concur::ctxt(irq)]
+// #[concur::ctxt(irq)]
+#[safety::Memo(Irq)]
 fn iommu_fault_handler(_frame: &TrapFrame) {
     let mut fault_event_regs = FAULT_EVENT_REGS.get().unwrap().lock();
 

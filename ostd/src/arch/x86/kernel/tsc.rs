@@ -100,7 +100,8 @@ pub fn determine_tsc_freq_via_pit() -> u64 {
 
     return FREQUENCY.load(Ordering::Acquire);
 
-    #[concur::ctxt(irq)]
+    // #[concur::ctxt(irq)]
+    #[safety::Memo(Irq)]
     fn pit_callback(trap_frame: &TrapFrame) {
         static IN_TIME: AtomicU64 = AtomicU64::new(0);
         static TSC_FIRST_COUNT: AtomicU64 = AtomicU64::new(0);

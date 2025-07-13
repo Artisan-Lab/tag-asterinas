@@ -23,6 +23,9 @@
 #![expect(internal_features)]
 #![no_std]
 #![warn(missing_docs)]
+// Required by tag-std / rapx
+#![feature(stmt_expr_attributes, proc_macro_hygiene, register_tool)]
+#![register_tool(rapx)]
 
 extern crate alloc;
 

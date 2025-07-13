@@ -445,7 +445,7 @@ impl<'rcu, C: PageTableConfig> CursorMut<'rcu, C> {
     /// The caller should ensure that
     ///  - the range being mapped does not affect kernel's memory safety;
     ///  - the physical address to be mapped is valid and safe to use;
-    
+
     pub unsafe fn map(&mut self, item: C::Item) -> Result<(), PageTableFrag<C>> {
         assert!(self.0.va < self.0.barrier_va.end);
         let (pa, level, prop) = C::item_into_raw(item);
@@ -521,8 +521,10 @@ impl<'rcu, C: PageTableConfig> CursorMut<'rcu, C> {
     /// Panics if:
     ///  - the length is longer than the remaining range of the cursor;
     ///  - the length is not page-aligned.
-    #[safety::precond::Le(len, self.0.va_barrier.end - self.0.va)]
-    #[safety::precond::Align(len, C::BASE_PAGE_SIZE)]
+    #[safety_macro::Memo(Le, memo = "precond::Le(len, self.0.va_barrier.end - self.0.va)")]
+    // #[safety::precond::Le(len, self.0.va_barrier.end - self.0.va)]
+    #[safety_macro::Memo(Align, memo = "precond::Align(len, C::BASE_PAGE_SIZE)")]
+    // #[safety::precond::Align(len, C::BASE_PAGE_SIZE)]
     pub unsafe fn take_next(&mut self, len: usize) -> Option<PageTableFrag<C>> {
         self.0.find_next_impl(len, true, true)?;
 
@@ -559,8 +561,10 @@ impl<'rcu, C: PageTableConfig> CursorMut<'rcu, C> {
     /// Panics if:
     ///  - the length is longer than the remaining range of the cursor;
     ///  - the length is not page-aligned.
-    #[safety::precond::Le(len, self.0.va_barrier.end - self.0.va)]
-    #[safety::precond::Align(len, C::BASE_PAGE_SIZE)]
+    #[safety_macro::Memo(Le, memo = "precond::Le(len, self.0.va_barrier.end - self.0.va)")]
+    // #[safety::precond::Le(len, self.0.va_barrier.end - self.0.va)]
+    #[safety_macro::Memo(Align, memo = "precond::Align(len, C::BASE_PAGE_SIZE)")]
+    // #[safety::precond::Align(len, C::BASE_PAGE_SIZE)]
     pub unsafe fn protect_next(
         &mut self,
         len: usize,

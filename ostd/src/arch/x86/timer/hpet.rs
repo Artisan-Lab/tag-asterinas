@@ -133,7 +133,7 @@ impl Hpet {
 /// HPET init, need to init IOAPIC before init this function
 #[expect(dead_code)]
 pub fn init() -> Result<(), AcpiError> {
-    let tables = get_acpi_tables().unwrap();
+    let tables = unsafe { get_acpi_tables().unwrap() };
 
     let hpet_info = HpetInfo::new(&tables)?;
     assert_ne!(hpet_info.base_address, 0, "HPET address should not be zero");

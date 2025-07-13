@@ -1,7 +1,7 @@
 {
     "rust-analyzer.cargo.target": "x86_64-unknown-none",
     "rust-analyzer.check.extraEnv": {
-        "RUSTFLAGS": "--check-cfg cfg(ktest) --cfg ktest"
+        "RUSTFLAGS": "--check-cfg cfg(ktest) --cfg ktest -L/home/gh-zjp-CN/tag-std/safety-tool/target/safety-tool/lib --extern safety_macro -Zcrate-attr=feature(register_tool) -Zcrate-attr=register_tool(rapx)"
     },
     "rust-analyzer.check.overrideCommand": [
         "cargo",

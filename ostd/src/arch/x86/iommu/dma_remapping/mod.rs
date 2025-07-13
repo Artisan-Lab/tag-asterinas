@@ -86,6 +86,7 @@ pub fn init() {
     // Directed I/O (Revision 5.0), 3.16 Handling Requests to Reserved System Memory.
     let page_table = PageTable::<IommuPtConfig>::empty();
     for table in PciDeviceLocation::all() {
+        #[safety_macro::discharges(Memo(Uncoppied))]
         root_table.specify_device_page_table(table, unsafe { page_table.shallow_copy() })
     }
     PAGE_TABLE.call_once(|| SpinLock::new(root_table));

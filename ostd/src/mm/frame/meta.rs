@@ -305,7 +305,8 @@ impl MetaSlot {
     /// # Safety
     ///
     /// The caller must have already held a reference to the frame.
-    #[safety::precond::SlotFrameRefHeld(self)]
+    #[safety_macro::Memo(SlotFrameRefHeld, memo = "precond::SlotFrameRefHeld(self)")]
+    // #[safety::precond::SlotFrameRefHeld(self)]
     pub(super) unsafe fn inc_ref_count(&self) {
         let last_ref_cnt = self.ref_count.fetch_add(1, Ordering::Relaxed);
         debug_assert!(last_ref_cnt != 0 && last_ref_cnt != REF_COUNT_UNUSED);
@@ -332,8 +333,13 @@ impl MetaSlot {
     ///
     /// The returned pointer should not be dereferenced as mutable unless having
     /// exclusive access to the metadata slot.
-    #[safety::precond::PostToFunc(NULL, MetaSlot::write_meta, self, *)]
-    #[safety::postcond::MutExclusive(ReturnValue)]
+    #[safety_macro::Memo(
+        PostToFunc,
+        memo = "precond::PostToFunc(NULL, MetaSlot::write_meta, self, *)"
+    )]
+    #[safety_macro::Memo(MutExclusive, memo = "postcond::MutExclusive(ReturnValue)")]
+    // #[safety::precond::PostToFunc(NULL, MetaSlot::write_meta, self, *)]
+    // #[safety::postcond::MutExclusive(ReturnValue)]
     pub(super) unsafe fn dyn_meta_ptr(&self) -> *mut dyn AnyFrameMeta {
         // SAFETY: The page metadata is valid to be borrowed immutably, since
         // it will never be borrowed mutably after initialization.
@@ -357,8 +363,13 @@ impl MetaSlot {
     ///  - the initialized metadata is of type `M`;
     ///  - the returned pointer should not be dereferenced as mutable unless
     ///    having exclusive access to the metadata slot.
-    #[safety::postcond::PriorToFunc(MetaSlot::write_meta, ReturnValue, Instance(M))]
-    #[safety::postcond::MutExclusive(ReturnValue)]
+    #[safety_macro::Memo(
+        PriorToFunc,
+        memo = "postcond::PriorToFunc(MetaSlot::write_meta, ReturnValue, Instance(M))"
+    )]
+    #[safety_macro::Memo(MutExclusive, memo = "postcond::MutExclusive(ReturnValue)")]
+    // #[safety::postcond::PriorToFunc(MetaSlot::write_meta, ReturnValue, Instance(M))]
+    // #[safety::postcond::MutExclusive(ReturnValue)]
     pub(super) fn as_meta_ptr<M: AnyFrameMeta>(&self) -> *mut M {
         self.storage.get() as *mut M
     }
@@ -368,7 +379,8 @@ impl MetaSlot {
     /// # Safety
     ///
     /// The caller should have exclusive access to the metadata slot's fields.
-    #[safety::global::MutExclusive(self)]
+    #[safety_macro::Memo(MutExclusive, memo = "global::MutExclusive(self)")]
+    // #[safety::global::MutExclusive(self)]
     pub(super) unsafe fn write_meta<M: AnyFrameMeta>(&self, metadata: M) {
         const { assert!(size_of::<M>() <= FRAME_METADATA_MAX_SIZE) };
         const { assert!(align_of::<M>() <= FRAME_METADATA_MAX_ALIGN) };
@@ -393,8 +405,10 @@ impl MetaSlot {
     /// The caller should ensure that:
     ///  - the reference count is `0` (so we are the sole owner of the frame);
     ///  - the metadata is initialized;
-    #[safety::precond::Equal(self.ref_count, 0)]
-    #[safety::precond::Initialized(self.storage)]
+    #[safety_macro::Memo(Equal, memo = "precond::Equal(self.ref_count, 0)")]
+    #[safety_macro::Memo(Initialized, memo = "precond::Initialized(self.storage)")]
+    // #[safety::precond::Equal(self.ref_count, 0)]
+    // #[safety::precond::Initialized(self.storage)]
     pub(super) unsafe fn drop_last_in_place(&self) {
         // This should be guaranteed as a safety requirement.
         debug_assert_eq!(self.ref_count.load(Ordering::Relaxed), 0);
@@ -417,9 +431,11 @@ impl MetaSlot {
     /// The caller should ensure that:
     ///  - the reference count is `0` (so we are the sole owner of the frame);
     ///  - the metadata is initialized;
-    /// 
-    #[safety::precond::Equal(self.ref_count, 0)]
-    #[safety::precond::Initialized(self.storage)]
+    ///
+    #[safety_macro::Memo(Equal, memo = "precond::Equal(self.ref_count, 0)")]
+    #[safety_macro::Memo(Initialized, memo = "precond::Initialized(self.storage)")]
+    // #[safety::precond::Equal(self.ref_count, 0)]
+    // #[safety::precond::Initialized(self.storage)]
     pub(super) unsafe fn drop_meta_in_place(&self) {
         let paddr = self.frame_paddr();
 
@@ -462,8 +478,10 @@ impl_frame_meta_for!(MetaPageMeta);
 ///
 /// 1. This function should be called only once.
 /// 2. This function should be called only on the BSP and before any APs are started.
-#[safety::global::CallOnce]
-#[safety::global::Context(BSP_BUT_AP)] //todo:: need definition of BSP_BUT_AP
+#[safety_macro::Memo(BSP_BUT_AP, memo = "global::Context(BSP_BUT_AP)")]
+#[safety_macro::Memo(CallOnce, memo = "global::CallOnce")]
+// #[safety::global::CallOnce]
+// #[safety::global::Context(BSP_BUT_AP)] //todo:: need definition of BSP_BUT_AP
 pub(crate) unsafe fn init() -> Segment<MetaPageMeta> {
     let max_paddr = {
         let regions = &crate::boot::EARLY_INFO.get().unwrap().memory_regions;

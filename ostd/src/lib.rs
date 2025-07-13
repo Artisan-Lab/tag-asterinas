@@ -20,6 +20,8 @@
 #![feature(sync_unsafe_cell)]
 #![feature(trait_upcasting)]
 #![feature(unbounded_shifts)]
+#![feature(stmt_expr_attributes)]
+#![feature(proc_macro_hygiene)]
 #![expect(internal_features)]
 #![no_std]
 #![warn(missing_docs)]

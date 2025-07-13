@@ -136,7 +136,8 @@ impl<M: AnyFrameMeta + ?Sized> UniqueFrame<M> {
     ///
     /// The caller must ensure that the physical address is valid and points to
     /// a forgotten frame that was previously casted by [`Self::into_raw`].
-    #[safety::precond::FrameForgotten(paddr)]
+    #[safety_macro::Memo(FrameForgotten, memo = "precond::FrameForgotten(paddr)")]
+    // #[safety::precond::FrameForgotten(paddr)]
     pub(crate) unsafe fn from_raw(paddr: Paddr) -> Self {
         let vaddr = mapping::frame_to_meta::<PagingConsts>(paddr);
         let ptr = vaddr as *const MetaSlot;

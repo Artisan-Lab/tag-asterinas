@@ -343,6 +343,15 @@ check: initramfs $(CARGO_OSDK)
 	@# Check typos
 	@typos
 
+RAPX_EXIT_AND_EMIT ?= abort_and_emit
+RAPX_RUSTFLAGS ?= --check-cfg cfg(ktest) --cfg ktest -Zcrate-attr=feature(register_tool) -Zcrate-attr=register_tool(rapx) \
+						 -L/home/gh-zjp-CN/tag-std/safety-tool/target/safety-tool/lib --extern safety_macro
+
+.PHONY: rapx
+rapx:
+	# Currently only check ostd; ensure https://github.com/Artisan-Lab/tag-std is installed.
+	cd ostd && cargo clean && EXIT_AND_EMIT=$(RAPX_EXIT_AND_EMIT) RUSTFLAGS="$(RAPX_RUSTFLAGS)" cargo safety-tool --target x86_64-unknown-none
+
 .PHONY: clean
 clean:
 	@echo "Cleaning up Asterinas workspace target files"

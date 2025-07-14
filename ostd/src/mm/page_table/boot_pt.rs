@@ -71,7 +71,7 @@ where
 ///  - no [`with_borrow`] calls are performed on this CPU after the activation
 ///    of another page table and before this dismissal.
 #[safety::global::TaggedCallOnce(CPU_ID)]
-#[safety::precond::NonBootPTActivated]
+#[safety::precond::PostToFunc(PageTable::activate)] //may lack rigor
 #[safety::precond::NotPostToFunc(with_borrow)]
 #[safety::postcond::NotPriorToFunc(with_borrow)]
 pub(crate) unsafe fn dismiss() {
@@ -167,7 +167,8 @@ impl<E: PageTableEntryTrait, C: PagingConstsTrait> BootPageTable<E, C> {
     ///
     /// This function is unsafe because it can cause undefined behavior if the caller
     /// maps a page in the kernel address space.
-    #[safety::precond::ValidKernelMapping(from)]
+    #[safety::precond::TaggedCallOnce(from)] //may lack rigor
+    #[safety::precond::ValidAccess(from, USER, ANY)]
     pub unsafe fn map_base_page(&mut self, from: Vaddr, to: FrameNumber, prop: PageProperty) {
         let mut pt = self.root_pt;
         let mut level = C::NR_LEVELS;
@@ -210,7 +211,7 @@ impl<E: PageTableEntryTrait, C: PagingConstsTrait> BootPageTable<E, C> {
     ///
     /// This function is unsafe because it can cause undefined behavior if the caller
     /// maps a page in the kernel address space.
-    #[safety::precond::ValidKernelMapping(virt_addr)]
+    #[safety::precond::ValidSpace(virt_addr, USER)]
     pub unsafe fn protect_base_page(
         &mut self,
         virt_addr: Vaddr,

@@ -125,6 +125,8 @@ pub(crate) unsafe trait PageTableConfig:
     /// A concrete trait implementation may require the caller to ensure that
     ///  - the [`super::PageFlags::AVAIL1`] flag is the same as that returned
     ///    from [`PageTableConfig::item_into_raw`].
+    #[safety::precond::ValidInstance(PageTable(paddr, level))]
+    #[safety::postcond::NotOutLive(RETURN_VALUE, "original item")]
     unsafe fn item_from_raw(paddr: Paddr, level: PagingLevel, prop: PageProperty) -> Self::Item;
 }
 
@@ -361,7 +363,7 @@ impl PageTable<KernelPtConfig> {
     ///
     /// The caller must ensure that the protection operation does not affect
     /// the memory safety of the kernel.
-    #[safety::precond::ProtectMemorySafe(vaddr)]
+    #[safety::postcond::KernalMemorySafe]
     pub unsafe fn protect_flush_tlb(
         &self,
         vaddr: &Range<Vaddr>,
@@ -443,7 +445,7 @@ impl<C: PageTableConfig> PageTable<C> {
     /// Create a new reference to the same page table.
     /// The caller must ensure that the kernel page table is not copied.
     /// This is only useful for IOMMU page tables. Think twice before using it in other cases.
-    #[safety::precond::Uncoppied(self)]
+    #[safety::precond::NotPostToFunc("copy")]
     pub unsafe fn shallow_copy(&self) -> Self {
         PageTable {
             root: self.root.clone(),
@@ -474,6 +476,8 @@ impl<C: PageTableConfig> PageTable<C> {
 /// For the software page walk, we only need to disable preemption at the beginning
 /// since the page table nodes won't be recycled in the RCU critical section.
 #[cfg(ktest)]
+#[safety::precond::ValidInstance(PageTable(root_paddr))]
+#[safety::precond::ValidLevel(PageTable(root_paddr), C::NR_LEVELS)]
 pub(super) unsafe fn page_walk<C: PageTableConfig>(
     root_paddr: Paddr,
     vaddr: Vaddr,

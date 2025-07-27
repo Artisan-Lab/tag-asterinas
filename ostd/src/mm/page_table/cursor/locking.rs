@@ -5,6 +5,7 @@
 use core::{marker::PhantomData, mem::ManuallyDrop, ops::Range, sync::atomic::Ordering};
 
 use align_ext::AlignExt;
+use safety::safety;
 
 use super::Cursor;
 use crate::{
@@ -205,12 +206,10 @@ fn dfs_acquire_lock<C: PageTableConfig>(
 ///
 /// The caller must ensure that the nodes in the specified sub-tree are locked
 /// and all guards are forgotten.
-#[safety::Memo(SubtreeLocked, memo = "precond::SubtreeLocked(cur_node)")]
-// #[safety::precond::SubtreeLocked(cur_node)]
-#[safety::Memo(
-    SubtreeGuardForgotten,
-    memo = "precond::SubtreeGuardForgotten(cur_node)"
-)]
+#[safety {
+    SubtreeLocked: "precond::SubtreeLocked(cur_node)";
+    SubtreeGuardForgotten: "precond::SubtreeGuardForgotten(cur_node)"
+}]
 // #[safety::precond::SubtreeGuardForgotten(cur_node)]
 unsafe fn dfs_release_lock<'rcu, C: PageTableConfig>(
     guard: &'rcu dyn InAtomicMode,
@@ -258,13 +257,10 @@ unsafe fn dfs_release_lock<'rcu, C: PageTableConfig>(
 ///
 /// This function must not be called upon a shared node, e.g., the second-
 /// top level nodes that the kernel space and user space share.
-#[safety::Memo(SubtreeLocked, memo = "precond::SubtreeLocked(sub_tree)")]
-// #[safety::precond::SubtreeLocked(sub_tree)]
-#[safety::Memo(
-    SubtreeGuardForgotten,
-    memo = "precond::SubtreeGuardForgotten(sub_tree)"
-)]
-// #[safety::precond::SubtreeGuardForgotten(sub_tree)]
+#[safety{
+    SubtreeLocked: "precond::SubtreeLocked(sub_tree)";
+    SubtreeGuardForgotten: "precond::SubtreeGuardForgotten(sub_tree)"
+}]
 pub(super) unsafe fn dfs_mark_stray_and_unlock<C: PageTableConfig>(
     rcu_guard: &dyn InAtomicMode,
     mut sub_tree: PageTableGuard<C>,

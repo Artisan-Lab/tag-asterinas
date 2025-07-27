@@ -39,6 +39,7 @@ pub(crate) mod kvirt_area;
 use core::ops::Range;
 
 use log::info;
+use safety::safety;
 use spin::Once;
 #[cfg(ktest)]
 mod test;
@@ -244,7 +245,7 @@ pub fn init_kernel_page_table(meta_pages: Segment<MetaPageMeta>) {
 /// # Safety
 ///
 /// This function should only be called once per CPU.
-#[safety::Memo(TaggedCallOnce, memo = "global::TaggedCallOnce(CPU_ID)")]
+#[safety { TaggedCallOnce: "global::TaggedCallOnce(CPU_ID)" }]
 // #[safety::global::TaggedCallOnce(CPU_ID)]
 pub unsafe fn activate_kernel_page_table() {
     let kpt = KERNEL_PAGE_TABLE

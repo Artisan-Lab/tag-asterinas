@@ -23,6 +23,7 @@ mod syscall;
 use align_ext::AlignExt;
 use cfg_if::cfg_if;
 use log::debug;
+use safety::safety;
 use spin::Once;
 
 use super::{cpu::context::GeneralRegs, ex_table::ExTable};
@@ -148,7 +149,7 @@ pub fn is_kernel_interrupted() -> bool {
 /// Handle traps (only from kernel).
 #[no_mangle]
 // #[concur::ctxt(irq)]
-#[safety::Memo(Irq)]
+#[safety { Irq }]
 extern "sysv64" fn trap_handler(f: &mut TrapFrame) {
     fn enable_local_if(cond: bool) {
         if cond {

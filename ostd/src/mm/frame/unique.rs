@@ -4,6 +4,8 @@
 
 use core::{marker::PhantomData, mem::ManuallyDrop, sync::atomic::Ordering};
 
+use safety::safety;
+
 use super::{
     meta::{GetFrameError, REF_COUNT_UNIQUE},
     AnyFrameMeta, Frame, MetaSlot,
@@ -136,7 +138,7 @@ impl<M: AnyFrameMeta + ?Sized> UniqueFrame<M> {
     ///
     /// The caller must ensure that the physical address is valid and points to
     /// a forgotten frame that was previously casted by [`Self::into_raw`].
-    #[safety::Memo(FrameForgotten, memo = "precond::FrameForgotten(paddr)")]
+    #[safety { FrameForgotten: "precond::FrameForgotten(paddr)" }]
     // #[safety::precond::FrameForgotten(paddr)]
     pub(crate) unsafe fn from_raw(paddr: Paddr) -> Self {
         let vaddr = mapping::frame_to_meta::<PagingConsts>(paddr);

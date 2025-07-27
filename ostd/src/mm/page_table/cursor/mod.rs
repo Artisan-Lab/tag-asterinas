@@ -32,6 +32,7 @@ mod locking;
 use core::{fmt::Debug, marker::PhantomData, mem::ManuallyDrop, ops::Range};
 
 use align_ext::AlignExt;
+use safety::safety;
 
 use super::{
     page_size, pte_index, Child, ChildRef, Entry, PageTable, PageTableConfig, PageTableError,
@@ -520,10 +521,10 @@ impl<'rcu, C: PageTableConfig> CursorMut<'rcu, C> {
     /// Panics if:
     ///  - the length is longer than the remaining range of the cursor;
     ///  - the length is not page-aligned.
-    #[safety::Memo(Le, memo = "precond::Le(len, self.0.va_barrier.end - self.0.va)")]
-    // #[safety::precond::Le(len, self.0.va_barrier.end - self.0.va)]
-    #[safety::Memo(Align, memo = "precond::Align(len, C::BASE_PAGE_SIZE)")]
-    // #[safety::precond::Align(len, C::BASE_PAGE_SIZE)]
+    #[safety {
+        Le: "precond::Le(len, self.0.va_barrier.end - self.0.va)";
+        Align: "precond::Align(len, C::BASE_PAGE_SIZE)"
+    }]
     pub unsafe fn take_next(&mut self, len: usize) -> Option<PageTableFrag<C>> {
         self.0.find_next_impl(len, true, true)?;
 
@@ -560,10 +561,10 @@ impl<'rcu, C: PageTableConfig> CursorMut<'rcu, C> {
     /// Panics if:
     ///  - the length is longer than the remaining range of the cursor;
     ///  - the length is not page-aligned.
-    #[safety::Memo(Le, memo = "precond::Le(len, self.0.va_barrier.end - self.0.va)")]
-    // #[safety::precond::Le(len, self.0.va_barrier.end - self.0.va)]
-    #[safety::Memo(Align, memo = "precond::Align(len, C::BASE_PAGE_SIZE)")]
-    // #[safety::precond::Align(len, C::BASE_PAGE_SIZE)]
+    #[safety {
+        Le: "precond::Le(len, self.0.va_barrier.end - self.0.va)";
+        Align: "precond::Align(len, C::BASE_PAGE_SIZE)"
+    }]
     pub unsafe fn protect_next(
         &mut self,
         len: usize,

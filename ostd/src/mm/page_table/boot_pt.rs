@@ -10,6 +10,8 @@ use core::{
     sync::atomic::{AtomicU32, Ordering},
 };
 
+use safety::safety;
+
 use super::{pte_index, PageTableEntryTrait};
 use crate::{
     arch::mm::{PageTableEntry, PagingConsts},
@@ -70,10 +72,12 @@ where
 ///  - no [`with_borrow`] calls are performed on this CPU after this dismissal;
 ///  - no [`with_borrow`] calls are performed on this CPU after the activation
 ///    of another page table and before this dismissal.
-#[safety::Memo(TaggedCallOnce, memo = "global::TaggedCallOnce(CPU_ID)")]
-#[safety::Memo(NonBootPTActivated, memo = "precond::NonBootPTActivated")]
-#[safety::Memo(NotPostToFunc, memo = "precond::NotPostToFunc(with_borrow)")]
-#[safety::Memo(NotPriorToFunc, memo = "postcond::NotPriorToFunc(with_borrow)")]
+#[safety {
+    TaggedCallOnce: "global::TaggedCallOnce(CPU_ID)";
+    NonBootPTActivated: "precond::NonBootPTActivated";
+    NotPostToFunc: "precond::NotPostToFunc(with_borrow)";
+    NotPriorToFunc: "postcond::NotPriorToFunc(with_borrow)"
+}]
 // #[safety::global::TaggedCallOnce(CPU_ID)]
 // #[safety::precond::NonBootPTActivated]
 // #[safety::precond::NotPostToFunc(with_borrow)]
@@ -140,8 +144,10 @@ impl<E: PageTableEntryTrait, C: PagingConstsTrait> BootPageTable<E, C> {
     /// This function should be called only once in the initialization phase.
     /// Otherwise, It would lead to double-drop of the page table frames set up
     /// by the firmware, loader or the setup code.
-    #[safety::Memo(CallOnce, memo = "global::CallOnce")]
-    #[safety::Memo(PAGETABLE_INITIALIZE, memo = "global::Context(PAGETABLE_INITIALIZE)")]
+    #[safety {
+        CallOnce: "global::CallOnce";
+        PAGETABLE_INITIALIZE: "global::Context(PAGETABLE_INITIALIZE)"
+    }]
     // #[safety::global::CallOnce]
     // #[safety::global::Context(PAGETABLE_INITIALIZE)]
     unsafe fn from_current_pt() -> Self {
@@ -173,7 +179,7 @@ impl<E: PageTableEntryTrait, C: PagingConstsTrait> BootPageTable<E, C> {
     ///
     /// This function is unsafe because it can cause undefined behavior if the caller
     /// maps a page in the kernel address space.
-    #[safety::Memo(ValidKernelMapping, memo = "precond::ValidKernelMapping(from)")]
+    #[safety { ValidKernelMapping: "precond::ValidKernelMapping(from)" }]
     // #[safety::precond::ValidKernelMapping(from)]
     pub unsafe fn map_base_page(&mut self, from: Vaddr, to: FrameNumber, prop: PageProperty) {
         let mut pt = self.root_pt;
@@ -217,7 +223,7 @@ impl<E: PageTableEntryTrait, C: PagingConstsTrait> BootPageTable<E, C> {
     ///
     /// This function is unsafe because it can cause undefined behavior if the caller
     /// maps a page in the kernel address space.
-    #[safety::Memo(ValidKernelMapping, memo = "precond::ValidKernelMapping(virt_addr)")]
+    #[safety { ValidKernelMapping: "precond::ValidKernelMapping(virt_addr)" }]
     // #[safety::precond::ValidKernelMapping(virt_addr)]
     pub unsafe fn protect_base_page(
         &mut self,

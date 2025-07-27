@@ -329,9 +329,9 @@ impl TryFrom<Frame<dyn AnyFrameMeta>> for UFrame {
 /// The caller should ensure the following conditions:
 ///  1. The physical address must represent a valid frame;
 ///  2. The caller must have already held a reference to the frame.
-#[safety{
+#[safety {
     ValidFrame: "precond::ValidFrame(paddr)";
-    FrameRefHeld, memo = "precond::FrameRefHeld(paddr)"
+    FrameRefHeld: "precond::FrameRefHeld(paddr)"
 }]
 // #[safety::precond::ValidFrame(paddr)]
 // #[safety::precond::FrameRefHeld(paddr)]

@@ -4,6 +4,8 @@
 
 use core::{alloc::AllocError, ptr::NonNull};
 
+use safety::safety;
+
 use crate::{
     impl_frame_meta_for,
     mm::{

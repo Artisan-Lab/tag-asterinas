@@ -349,7 +349,8 @@ RAPX_RUSTFLAGS     ?= --check-cfg cfg(ktest) --cfg ktest
 .PHONY: rapx
 rapx:
 	# Currently only check ostd; ensure https://github.com/Artisan-Lab/tag-std is installed.
-	cd ostd && cargo clean && EXIT_AND_EMIT=$(RAPX_EXIT_AND_EMIT) RUSTFLAGS="$(RAPX_RUSTFLAGS)" cargo safety-tool --target x86_64-unknown-none $(RAPX_ARGS)
+	cd ostd && cargo clean && \
+		EXIT_AND_EMIT=$(RAPX_EXIT_AND_EMIT) RUSTFLAGS="$(RAPX_RUSTFLAGS)" cargo safety-tool --target x86_64-unknown-none $(RAPX_ARGS)
 
 .PHONY: clean
 clean:

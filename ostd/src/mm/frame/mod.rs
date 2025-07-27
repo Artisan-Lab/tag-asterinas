@@ -52,6 +52,7 @@ use core::{
 
 pub use allocator::GlobalFrameAllocator;
 use meta::{mapping, AnyFrameMeta, GetFrameError, MetaSlot, REF_COUNT_UNUSED};
+use safety::safety;
 pub use segment::Segment;
 use untyped::{AnyUFrameMeta, UFrame};
 
@@ -211,8 +212,10 @@ impl<M: AnyFrameMeta + ?Sized> Frame<M> {
     ///
     /// Also, the caller ensures that the usage of the frame is correct. There's
     /// no checking of the usage in this function.
-    #[safety::Memo(FrameForgotten, memo = "precond::FrameForgotten(paddr)")]
-    #[safety::Memo(TaggedCallOnce, memo = "global::TaggedCallOnce(paddr)")]
+    #[safety {
+        FrameForgotten: "precond::FrameForgotten(paddr)";
+        TaggedCallOnce: "global::TaggedCallOnce(paddr)"
+    }]
     // #[safety::precond::FrameForgotten(paddr)]
     // #[safety::global::TaggedCallOnce(paddr)]
     pub(in crate::mm) unsafe fn from_raw(paddr: Paddr) -> Self {
@@ -326,8 +329,10 @@ impl TryFrom<Frame<dyn AnyFrameMeta>> for UFrame {
 /// The caller should ensure the following conditions:
 ///  1. The physical address must represent a valid frame;
 ///  2. The caller must have already held a reference to the frame.
-#[safety::Memo(ValidFrame, memo = "precond::ValidFrame(paddr)")]
-#[safety::Memo(FrameRefHeld, memo = "precond::FrameRefHeld(paddr)")]
+#[safety{
+    ValidFrame: "precond::ValidFrame(paddr)";
+    FrameRefHeld, memo = "precond::FrameRefHeld(paddr)"
+}]
 // #[safety::precond::ValidFrame(paddr)]
 // #[safety::precond::FrameRefHeld(paddr)]
 pub(in crate::mm) unsafe fn inc_frame_ref_count(paddr: Paddr) {

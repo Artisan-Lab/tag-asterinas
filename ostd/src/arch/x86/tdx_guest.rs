@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use log::warn;
+use safety::safety;
 use tdx_guest::{tdcall::accept_page, tdvmcall::map_gpa, TdxTrapFrame};
 
 use super::trap::TrapFrame;
@@ -59,7 +60,7 @@ pub unsafe fn unprotect_gpa_range(gpa: Paddr, page_num: usize) -> Result<(), Pag
             let vaddr = paddr_to_vaddr(gpa + i * PAGE_SIZE);
             // SAFETY: The caller ensures that the address range exists in the linear mapping and
             // can be mapped as shared pages.
-            #[safety::discharges(Memo(ValidKernelMapping))]
+            #[safety { ValidKernelMapping }]
             unsafe {
                 boot_pt.protect_base_page(vaddr, protect_op)
             };

@@ -7,6 +7,7 @@
 
 use alloc::{boxed::Box, collections::VecDeque};
 
+use safety::safety;
 use spin::Once;
 
 use crate::{
@@ -81,7 +82,7 @@ cpu_local! {
 }
 
 // #[concur::ctxt(irq)]
-#[safety::Memo(Irq)]
+#[safety { Irq }]
 fn do_inter_processor_call(_trapframe: &TrapFrame) {
     // No races because we are in IRQs.
     let this_cpu_id = crate::cpu::CpuId::current_racy();

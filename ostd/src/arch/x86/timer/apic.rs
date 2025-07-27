@@ -3,6 +3,7 @@
 use core::sync::atomic::{AtomicU64, Ordering};
 
 use log::info;
+use safety::safety;
 
 use super::TIMER_FREQ;
 use crate::{
@@ -137,7 +138,7 @@ fn init_periodic_mode_config() {
     drop(irq);
 
     // #[concur::ctxt(irq)]
-    #[safety::Memo(Irq)]
+    #[safety { Irq }]
     fn pit_callback(_trap_frame: &TrapFrame) {
         static IN_TIME: AtomicU64 = AtomicU64::new(0);
         static APIC_FIRST_COUNT: AtomicU64 = AtomicU64::new(0);

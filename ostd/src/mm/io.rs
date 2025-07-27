@@ -45,6 +45,7 @@ use core::marker::PhantomData;
 
 use align_ext::AlignExt;
 use inherit_methods_macro::inherit_methods;
+use safety::safety;
 
 use crate::{
     arch::mm::{__memcpy_fallible, __memset_fallible},
@@ -292,8 +293,10 @@ pub enum Infallible {}
 ///
 /// [valid]: crate::mm::io#safety
 
-#[safety::Memo(ReadLen, memo = "precond::ReadLen(src, len)")]
-#[safety::Memo(WriteLen, memo = "precond::WriteLen(dst, len)")]
+#[safety {
+    ReadLen: "precond::ReadLen(src, len)";
+    WriteLen: "precond::WriteLen(dst, len)"
+}]
 // #[safety::precond::ReadLen(src, len)]
 // #[safety::precond::WriteLen(dst, len)]
 unsafe fn memcpy(dst: *mut u8, src: *const u8, len: usize) {
@@ -328,8 +331,10 @@ unsafe fn memcpy(dst: *mut u8, src: *const u8, len: usize) {
 /// - `dst` must either be [valid] for writes of `len` bytes or be in user space for `len` bytes.
 ///
 /// [valid]: crate::mm::io#safety
-#[safety::Memo(ReadLen, memo = "precond::ReadLen(src, len)")]
-#[safety::Memo(WriteLen, memo = "precond::WriteLen(dst, len)")]
+#[safety {
+    ReadLen: "precond::ReadLen(src, len)";
+    WriteLen: "precond::WriteLen(dst, len)"
+}]
 // #[safety::precond::ReadLen(src, len)]
 // #[safety::precond::ValidWriteLen(dst, len)]
 unsafe fn memcpy_fallible(dst: *mut u8, src: *const u8, len: usize) -> usize {
@@ -348,7 +353,7 @@ unsafe fn memcpy_fallible(dst: *mut u8, src: *const u8, len: usize) -> usize {
 /// - `dst` must either be [valid] for writes of `len` bytes or be in user space for `len` bytes.
 ///
 /// [valid]: crate::mm::io#safety
-#[safety::Memo(WriteLen, memo = "precond::WriteLen(dst, len)")]
+#[safety { WriteLen: "precond::WriteLen(dst, len)" }]
 // #[safety::precond::ValidWriteLen(dst, len)] //or
 // #[safety::precond::UserSpaceLen(dst, len)]
 unsafe fn memset_fallible(dst: *mut u8, value: u8, len: usize) -> usize {
@@ -482,7 +487,7 @@ impl<'a> VmReader<'a, Infallible> {
     /// `ptr` must be [valid] for reads of `len` bytes during the entire lifetime `a`.
     ///
     /// [valid]: crate::mm::io#safety
-    #[safety::Memo(WriteLen, memo = "precond::WriteLen(dst, len)")]
+    #[safety { WriteLen: "precond::WriteLen(dst, len)" }]
     // #[safety::precond::UserSpaceLen(dst, len)]
     pub unsafe fn from_kernel_space(ptr: *const u8, len: usize) -> Self {
         // Rust is allowed to give the reference to a zero-sized object a very small address,
@@ -583,7 +588,7 @@ impl VmReader<'_, Fallible> {
     /// # Safety
     ///
     /// The virtual address range `ptr..ptr + len` must be in user space.
-    #[safety::Memo(UserSpaceLen, memo = "precond::UserSpaceLen(ptr, len)")]
+    #[safety { UserSpaceLen: "precond::UserSpaceLen(ptr, len)" }]
     // #[safety::precond::UserSpaceLen(ptr, len)]
     pub unsafe fn from_user_space(ptr: *const u8, len: usize) -> Self {
         debug_assert!(ptr.addr().checked_add(len).unwrap() <= MAX_USERSPACE_VADDR);
@@ -727,7 +732,7 @@ impl<'a> VmWriter<'a, Infallible> {
     /// `ptr` must be [valid] for writes of `len` bytes during the entire lifetime `a`.
     ///
     /// [valid]: crate::mm::io#safety
-    #[safety::Memo(WriteLen, memo = "precond::WriteLen(dst, len)")]
+    #[safety { WriteLen: "precond::WriteLen(dst, len)" }]
     // #[safety::precond::ValidWriteLen(ptr, len)]
     pub unsafe fn from_kernel_space(ptr: *mut u8, len: usize) -> Self {
         // If casting a zero sized slice to a pointer, the pointer may be null
@@ -844,7 +849,7 @@ impl VmWriter<'_, Fallible> {
     /// # Safety
     ///
     /// `ptr` must be in user space for `len` bytes.
-    #[safety::Memo(WriteLen, memo = "precond::WriteLen(dst, len)")]
+    #[safety { WriteLen: "precond::WriteLen(dst, len)" }]
     // #[safety::precond::UserSpaceLen(ptr, len)]
     pub unsafe fn from_user_space(ptr: *mut u8, len: usize) -> Self {
         debug_assert!(ptr.addr().checked_add(len).unwrap() <= MAX_USERSPACE_VADDR);

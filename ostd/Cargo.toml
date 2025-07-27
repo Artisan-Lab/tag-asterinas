@@ -38,8 +38,8 @@ unwinding = { version = "=0.2.5", default-features = false, features = ["fde-gnu
 volatile = "0.6.1"
 bitvec = { version = "1.0", default-features = false, features = ["alloc"] }
 
-# FIXME: change this to v0.2.1 once it's available on crates.io
-safety = { git = "https://github.com/Artisan-Lab/tag-std", rev = "4bdff279c921a7c765a747826f187b795db82a5b", package = "safety-lib" }
+# FIXME: change this version once it's available on crates.io
+safety = { git = "https://github.com/os-checker/tag-std", rev = "1cbf699", package = "safety-macro" }
 
 [target.x86_64-unknown-none.dependencies]
 x86_64 = "0.14.13"

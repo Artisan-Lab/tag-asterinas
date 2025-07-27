@@ -4,6 +4,8 @@
 
 use core::ops::Range;
 
+use safety::safety;
+
 use super::{KERNEL_PAGE_TABLE, VMALLOC_VADDR_RANGE};
 use crate::{
     mm::{
@@ -125,12 +127,11 @@ impl KVirtArea {
     ///  - the map offset plus the length of the physical range exceeds the
     ///    area size;
     ///  - the provided physical range contains tracked physical addresses.
-    #[safety::Memo(
-        Align,
-        memo = "precond::Align(area_size, PAGE_SIZE) && precond::Align(map_offset, PAGE_SIZE) && precond::Align(pa_range, PAGE_SIZE)"
-    )]
-    #[safety::Memo(Le, memo = "precond::Le(map_offset + pa_range.len(), area_size)")]
-    #[safety::Memo(FrameUntracked, memo = "precond::FrameUntracked(pa_range)")]
+    #[safety {
+        Align: "precond::Align(area_size, PAGE_SIZE) && precond::Align(map_offset, PAGE_SIZE) && precond::Align(pa_range, PAGE_SIZE)";
+        Le: "precond::Le(map_offset + pa_range.len(), area_size)";
+        FrameUntracked: "precond::FrameUntracked(pa_range)"
+    }]
     // #[safety::precond::Align(area_size, PAGE_SIZE)]
     // #[safety::precond::Align(map_offset, PAGE_SIZE)]
     // #[safety::precond::Align(pa_range, PAGE_SIZE)]

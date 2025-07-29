@@ -63,7 +63,7 @@ pub(super) fn init_ap() {
 }
 
 // #[concur::ctxt(irq)]
-#[safety { Irq }]
+
 fn timer_callback(_: &TrapFrame) {
     let irq_guard = trap::irq::disable_local();
     if irq_guard.current_cpu() == CpuId::bsp() {

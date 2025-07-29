@@ -97,7 +97,7 @@ impl<C: PageTableConfig> PageTableNode<C> {
     /// # Panics
     ///
     /// Only top-level page tables can be activated using this function.
-    #[safety { ProperMapping: "precond::ProperMapping(self)" }]
+    
     // #[safety::precond::ProperMapping(self)]
     pub(crate) unsafe fn activate(&self) {
         use crate::{
@@ -124,7 +124,7 @@ impl<C: PageTableConfig> PageTableNode<C> {
     ///
     /// It will not try dropping the last activate page table. It is the same
     /// with [`Self::activate()`] in other senses.
-    #[safety { CallOnce: "global::CallOnce" }]
+    
     // #[safety::global::CallOnce]
     pub(super) unsafe fn first_activate(&self) {
         use crate::{arch::mm::activate_page_table, mm::CachePolicy};
@@ -167,7 +167,7 @@ impl<'a, C: PageTableConfig> PageTableNodeRef<'a, C> {
     ///
     /// Calling this function when a guard is already created is undefined behavior
     /// unless that guard was already forgotten.
-    #[safety { LockHeld: "precond::LockHeld" }]
+    
     // #[safety::precond::LockHeld]
     pub(super) unsafe fn make_guard_unchecked<'rcu>(
         self,
@@ -220,7 +220,7 @@ impl<'rcu, C: PageTableConfig> PageTableGuard<'rcu, C> {
     /// # Safety
     ///
     /// The caller must ensure that the index is within the bound.
-    #[safety { PteIndexBounded: "precond::PteIndexBounded(self, idx" }]
+    
     // #[safety::precond::PteIndexBounded(self, idx)]
     pub(super) unsafe fn read_pte(&self, idx: usize) -> C::E {
         debug_assert!(idx < nr_subpage_per_huge::<C>());
@@ -243,11 +243,7 @@ impl<'rcu, C: PageTableConfig> PageTableGuard<'rcu, C> {
     ///     and at the right paging level (`self.level() - 1`).
     ///  3. The page table node will have the ownership of the [`Child`]
     ///     after this method.
-    #[safety {
-        PteIndexBounded: "precond::PteIndexBounded(self, idx)";
-        PteLevelChild: "precond::PteLevelChild(self, pte)";
-        PteOwned: "postcond::PteOwned(self, pte)"
-    }]
+
     pub(super) unsafe fn write_pte(&mut self, idx: usize, pte: C::E) {
         debug_assert!(idx < nr_subpage_per_huge::<C>());
         let ptr = paddr_to_vaddr(self.start_paddr()) as *mut C::E;

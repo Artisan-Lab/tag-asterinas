@@ -117,7 +117,7 @@ impl<M: AnyFrameMeta> Segment<M> {
     /// The range must be a forgotten [`Segment`] that matches the type `M`.
     /// It could be manually forgotten by [`core::mem::forget`],
     /// [`ManuallyDrop`], or [`Self::into_raw`].
-    #[safety { RangeSegmentForgotten: "precond::RangeSegmentForgotten(range)" }]
+    
     // #[safety::precond::RangeSegmentForgotten(range)]
     pub(crate) unsafe fn from_raw(range: Range<Paddr>) -> Self {
         debug_assert_eq!(range.start % PAGE_SIZE, 0);

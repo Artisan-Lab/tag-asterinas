@@ -68,7 +68,7 @@ impl HeapSlot {
     ///
     /// If the pointer is from a [`super::Slab`] or [`Segment`], the slot must
     /// have a size that matches the slot size of the slab or segment respectively.
-    #[safety { ValidSlot: "precond::ValidSlot(addr)" }]
+    
     // #[safety::precond::ValidSlot(addr)]
     pub(super) unsafe fn new(addr: NonNull<u8>, info: SlotInfo) -> Self {
         Self { addr, info }

@@ -198,9 +198,9 @@ pub(super) fn get_global_frame_allocator() -> &'static dyn GlobalFrameAllocator 
 /// 1. This function should be called only once.
 /// 2. Memory regions should be initialized.
 /// 3. Early allocator should be initialized.
-#[safety::global::CallOnce]
-#[safety::precond::PostToFunc(EARLY_INFO.call_once)]
-#[safety::precond::PostToFunc(init_early_allocator)]
+//#[safety::global::CallOnce]
+//#[safety::precond::PostToFunc(EARLY_INFO.call_once)]
+//#[safety::precond::PostToFunc(init_early_allocator)]
 pub(crate) unsafe fn init() {
     let regions = &crate::boot::EARLY_INFO.get().unwrap().memory_regions;
 
@@ -361,8 +361,8 @@ pub(crate) fn early_alloc(layout: Layout) -> Option<Paddr> {
 /// 
 /// 1. This function should be called only once.
 /// 2. Memory regions should be ready.
-#[safety::global::CallOnce]
-#[safety::precond::PostToFunc(EARLY_INFO.call_once)]
+//#[safety::global::CallOnce]
+//#[safety::precond::PostToFunc(EARLY_INFO.call_once)]
 pub(crate) unsafe fn init_early_allocator() {
     let mut early_allocator = EARLY_ALLOCATOR.lock();
     *early_allocator = Some(EarlyFrameAllocator::new());

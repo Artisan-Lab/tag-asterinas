@@ -205,9 +205,9 @@ fn dfs_acquire_lock<C: PageTableConfig>(
 ///
 /// The caller must ensure that the nodes in the specified sub-tree are locked
 /// and all guards are forgotten.
-#[safety::precond::NotPostToFunc(dfs_mark_stray_and_unlock, cur_node)]
-#[safety::precond::NotPostToFunc(dfs_release_lock, cur_node)]
-#[safety::precond::RefForgotten(cur_node)]
+//#[safety::precond::NotPostToFunc(dfs_mark_stray_and_unlock, cur_node)]
+//#[safety::precond::NotPostToFunc(dfs_release_lock, cur_node)]
+//#[safety::precond::RefForgotten(cur_node)]
 unsafe fn dfs_release_lock<'rcu, C: PageTableConfig>(
     guard: &'rcu dyn InAtomicMode,
     mut cur_node: PageTableGuard<'rcu, C>,
@@ -255,11 +255,11 @@ unsafe fn dfs_release_lock<'rcu, C: PageTableConfig>(
 /// This function must not be called upon a shared node, e.g., the second-
 /// top level nodes that the kernel space and user space share.
 
-#[safety::precond::PostToFunc(locking::lock_range, Range(Addr(sub_tree)))]
-#[safety::precond::NotPostToFunc(locking::unlock_range, Range(Addr(sub_tree)))]
-#[safety::precond::NotPostToFunc(dfs_mark_stray_and_unlock, sub_tree)]
-#[safety::precond::NotPostToFunc(dfs_release_lock, sub_tree)]
-#[safety::precond::RefForgotten(sub_tree)]
+//#[safety::precond::PostToFunc(locking::lock_range, Range(Addr(sub_tree)))]
+//#[safety::precond::NotPostToFunc(locking::unlock_range, Range(Addr(sub_tree)))]
+//#[safety::precond::NotPostToFunc(dfs_mark_stray_and_unlock, sub_tree)]
+//#[safety::precond::NotPostToFunc(dfs_release_lock, sub_tree)]
+//#[safety::precond::RefForgotten(sub_tree)]
 pub(super) unsafe fn dfs_mark_stray_and_unlock<C: PageTableConfig>(
     rcu_guard: &dyn InAtomicMode,
     mut sub_tree: PageTableGuard<C>,

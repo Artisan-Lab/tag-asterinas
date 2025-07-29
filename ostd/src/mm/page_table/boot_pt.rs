@@ -70,10 +70,10 @@ where
 ///  - no [`with_borrow`] calls are performed on this CPU after this dismissal;
 ///  - no [`with_borrow`] calls are performed on this CPU after the activation
 ///    of another page table and before this dismissal.
-#[safety::global::TaggedCallOnce(CPU_ID)]
-#[safety::precond::PostToFunc(PageTable::activate)] //may lack rigor
-#[safety::precond::NotPostToFunc(with_borrow)]
-#[safety::postcond::NotPriorToFunc(with_borrow)]
+//#[safety::global::TaggedCallOnce(CPU_ID)]
+//#[safety::precond::PostToFunc(PageTable::activate)] //may lack rigor
+//#[safety::precond::NotPostToFunc(with_borrow)]
+//#[safety::postcond::NotPriorToFunc(with_borrow)]
 pub(crate) unsafe fn dismiss() {
     IS_DISMISSED.store(true);
     if DISMISS_COUNT.fetch_add(1, Ordering::SeqCst) as usize == num_cpus() - 1 {
@@ -136,8 +136,8 @@ impl<E: PageTableEntryTrait, C: PagingConstsTrait> BootPageTable<E, C> {
     /// This function should be called only once in the initialization phase.
     /// Otherwise, It would lead to double-drop of the page table frames set up
     /// by the firmware, loader or the setup code.
-    #[safety::global::CallOnce]
-    #[safety::global::Context(PAGETABLE_INITIALIZE)]
+    //#[safety::global::CallOnce]
+    //#[safety::global::Context(PAGETABLE_INITIALIZE)]
     unsafe fn from_current_pt() -> Self {
         let root_pt = crate::arch::mm::current_page_table_paddr() / C::BASE_PAGE_SIZE;
         // Make sure the 2 available bits are not set for firmware page tables.
@@ -167,8 +167,8 @@ impl<E: PageTableEntryTrait, C: PagingConstsTrait> BootPageTable<E, C> {
     ///
     /// This function is unsafe because it can cause undefined behavior if the caller
     /// maps a page in the kernel address space.
-    #[safety::precond::TaggedCallOnce(from)] //may lack rigor
-    #[safety::precond::ValidAccess(from, USER, ANY)]
+    //#[safety::precond::TaggedCallOnce(from)] //may lack rigor
+    //#[safety::precond::ValidAccess(from, USER, ANY)]
     pub unsafe fn map_base_page(&mut self, from: Vaddr, to: FrameNumber, prop: PageProperty) {
         let mut pt = self.root_pt;
         let mut level = C::NR_LEVELS;
@@ -211,7 +211,7 @@ impl<E: PageTableEntryTrait, C: PagingConstsTrait> BootPageTable<E, C> {
     ///
     /// This function is unsafe because it can cause undefined behavior if the caller
     /// maps a page in the kernel address space.
-    #[safety::precond::ValidSpace(virt_addr, USER)]
+    //#[safety::precond::ValidSpace(virt_addr, USER)]
     pub unsafe fn protect_base_page(
         &mut self,
         virt_addr: Vaddr,

@@ -125,8 +125,8 @@ pub(crate) unsafe trait PageTableConfig:
     /// A concrete trait implementation may require the caller to ensure that
     ///  - the [`super::PageFlags::AVAIL1`] flag is the same as that returned
     ///    from [`PageTableConfig::item_into_raw`].
-    #[safety::precond::ValidInstance(PageTable(paddr, level))]
-    #[safety::postcond::NotOutLive(RETURN_VALUE, "original item")]
+    //#[safety::precond::ValidInstance(PageTable(paddr, level))]
+    //#[safety::postcond::NotOutLive(RETURN_VALUE, "original item")]
     unsafe fn item_from_raw(paddr: Paddr, level: PagingLevel, prop: PageProperty) -> Self::Item;
 }
 
@@ -363,7 +363,7 @@ impl PageTable<KernelPtConfig> {
     ///
     /// The caller must ensure that the protection operation does not affect
     /// the memory safety of the kernel.
-    #[safety::postcond::KernalMemorySafe]
+    //#[safety::postcond::KernalMemorySafe]
     pub unsafe fn protect_flush_tlb(
         &self,
         vaddr: &Range<Vaddr>,
@@ -391,7 +391,7 @@ impl<C: PageTableConfig> PageTable<C> {
         }
     }
 
-    #[safety::global::CallOnce]
+    //#[safety::global::CallOnce]
     pub(in crate::mm) unsafe fn first_activate_unchecked(&self) {
         // SAFETY: The safety is upheld by the caller.
         unsafe { self.root.first_activate() };
@@ -445,7 +445,7 @@ impl<C: PageTableConfig> PageTable<C> {
     /// Create a new reference to the same page table.
     /// The caller must ensure that the kernel page table is not copied.
     /// This is only useful for IOMMU page tables. Think twice before using it in other cases.
-    #[safety::precond::NotPostToFunc("copy")]
+    //#[safety::precond::NotPostToFunc("copy")]
     pub unsafe fn shallow_copy(&self) -> Self {
         PageTable {
             root: self.root.clone(),
@@ -476,8 +476,8 @@ impl<C: PageTableConfig> PageTable<C> {
 /// For the software page walk, we only need to disable preemption at the beginning
 /// since the page table nodes won't be recycled in the RCU critical section.
 #[cfg(ktest)]
-#[safety::precond::ValidInstance(PageTable(root_paddr))]
-#[safety::precond::ValidLevel(PageTable(root_paddr), C::NR_LEVELS)]
+//#[safety::precond::ValidInstance(PageTable(root_paddr))]
+//#[safety::precond::ValidLevel(PageTable(root_paddr), C::NR_LEVELS)]
 pub(super) unsafe fn page_walk<C: PageTableConfig>(
     root_paddr: Paddr,
     vaddr: Vaddr,
@@ -578,7 +578,7 @@ pub trait PageTableEntryTrait:
 /// # Safety
 ///
 /// The safety preconditions are same as those of [`AtomicUsize::from_ptr`].
-#[safety::precond::SameAs(AtomicUsize::from_ptr)]
+//#[safety::precond::SameAs(AtomicUsize::from_ptr)]
 pub unsafe fn load_pte<E: PageTableEntryTrait>(ptr: *mut E, ordering: Ordering) -> E {
     // SAFETY: The safety is upheld by the caller.
     let atomic = unsafe { AtomicUsize::from_ptr(ptr.cast()) };
@@ -591,7 +591,7 @@ pub unsafe fn load_pte<E: PageTableEntryTrait>(ptr: *mut E, ordering: Ordering) 
 /// # Safety
 ///
 /// The safety preconditions are same as those of [`AtomicUsize::from_ptr`].
-#[safety::precond::SameAs(AtomicUsize::from_ptr)]
+//#[safety::precond::SameAs(AtomicUsize::from_ptr)]
 pub unsafe fn store_pte<E: PageTableEntryTrait>(ptr: *mut E, new_val: E, ordering: Ordering) {
     let new_raw = new_val.as_usize();
     // SAFETY: The safety is upheld by the caller.

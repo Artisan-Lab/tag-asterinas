@@ -58,6 +58,8 @@ use untyped::{AnyUFrameMeta, UFrame};
 use super::{PagingLevel, PAGE_SIZE};
 use crate::mm::{Paddr, PagingConsts, Vaddr};
 
+use safety_macro::safety;
+
 static MAX_PADDR: AtomicUsize = AtomicUsize::new(0);
 
 /// Returns the maximum physical address that is tracked by frame metadata.
@@ -200,19 +202,9 @@ impl<M: AnyFrameMeta + ?Sized> Frame<M> {
     }
 
     /// Restores a forgotten [`Frame`] from a physical address.
-    ///
-    /// # Safety
-    ///
-    /// The caller should only restore a `Frame` that was previously forgotten using
-    /// [`Frame::into_raw`].
-    ///
-    /// And the restoring operation should only be done once for a forgotten
-    /// [`Frame`]. Otherwise double-free will happen.
-    ///
-    /// Also, the caller ensures that the usage of the frame is correct. There's
-    /// no checking of the usage in this function.
-    //#[safety::precond::RefForgotten(Frame(paddr))]
-    //#[safety::global::TaggedCallOnce(paddr)]
+    #[safety {
+        RefForgotten("the frame") : "for the frame pointed by paddr"
+    }]
     pub(in crate::mm) unsafe fn from_raw(paddr: Paddr) -> Self {
         debug_assert!(paddr < max_paddr());
 
@@ -318,14 +310,10 @@ impl TryFrom<Frame<dyn AnyFrameMeta>> for UFrame {
 }
 
 /// Increases the reference count of the frame by one.
-///
-/// # Safety
-///
-/// The caller should ensure the following conditions:
-///  1. The physical address must represent a valid frame;
-///  2. The caller must have already held a reference to the frame.
-//#[safety::precond::Valid(Frame(paddr))]
-//#[safety::precond::RefHeld(Frame(paddr))]
+#[safety {
+    Valid("the frame"),
+    RefHeld("the frame") : "for a frame derived from paddr"
+}]
 pub(in crate::mm) unsafe fn inc_frame_ref_count(paddr: Paddr) {
     debug_assert!(paddr % PAGE_SIZE == 0);
     debug_assert!(paddr < max_paddr());

@@ -39,7 +39,7 @@ impl AcpiHandler for AcpiMemoryHandler {
 
 /// Safety:
 /// This function needs to be called after the OS initializes the ACPI table.
-pub(crate) unsafe fn get_acpi_tables() -> Option<AcpiTables<AcpiMemoryHandler>> {
+pub(crate) fn get_acpi_tables() -> Option<AcpiTables<AcpiMemoryHandler>> {
     let acpi_tables = match boot::EARLY_INFO.get().unwrap().acpi_arg {
         // Safety Discharge:
         // The address is parsed from authenticated boot data.

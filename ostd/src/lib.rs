@@ -21,6 +21,8 @@
 #![feature(trait_upcasting)]
 #![feature(unbounded_shifts)]
 #![expect(internal_features)]
+#![feature(register_tool)]
+#![register_tool(rapx)]
 #![no_std]
 #![warn(missing_docs)]
 

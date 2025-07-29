@@ -16,6 +16,8 @@ use crate::{
     util::ops::range_difference,
 };
 
+use safety_macro::safety;
+
 /// Options for allocating physical memory frames.
 pub struct FrameAllocOptions {
     zeroed: bool,
@@ -192,15 +194,12 @@ pub(super) fn get_global_frame_allocator() -> &'static dyn GlobalFrameAllocator 
 ///
 /// It just does adds the frames to the global frame allocator. Calling it
 /// multiple times would be not safe.
-///
-/// # Safety
-///
-/// 1. This function should be called only once.
-/// 2. Memory regions should be initialized.
-/// 3. Early allocator should be initialized.
-//#[safety::global::CallOnce]
-//#[safety::precond::PostToFunc(EARLY_INFO.call_once)]
-//#[safety::precond::PostToFunc(init_early_allocator)]
+
+#[safety {
+    CallOnce(system),
+    PostToFunc(crate::boot::EARLY_INFO.call_once),
+    PostToFunc(init_early_allocator)
+}]
 pub(crate) unsafe fn init() {
     let regions = &crate::boot::EARLY_INFO.get().unwrap().memory_regions;
 
@@ -356,13 +355,11 @@ pub(crate) fn early_alloc(layout: Layout) -> Option<Paddr> {
 ///
 /// [`early_alloc`] should be used after this initialization. After [`init`], the
 /// early allocator.
-///
-/// # Safety
-/// 
-/// 1. This function should be called only once.
-/// 2. Memory regions should be ready.
-//#[safety::global::CallOnce]
-//#[safety::precond::PostToFunc(EARLY_INFO.call_once)]
+
+#[safety {
+    CallOnce(system),
+    PostToFunc(crate::boot::EARLY_INFO.call_once)
+}]
 pub(crate) unsafe fn init_early_allocator() {
     let mut early_allocator = EARLY_ALLOCATOR.lock();
     *early_allocator = Some(EarlyFrameAllocator::new());

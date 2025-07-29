@@ -11,6 +11,8 @@ use super::{
 };
 use crate::mm::{AnyUFrameMeta, Paddr, PAGE_SIZE};
 
+use safety_macro::safety;
+
 /// A contiguous range of homogeneous physical memory frames.
 ///
 /// This is a handle to multiple contiguous frames. It will be more lightweight
@@ -109,13 +111,9 @@ impl<M: AnyFrameMeta> Segment<M> {
     }
 
     /// Restores the [`Segment`] from the raw physical address range.
-    ///
-    /// # Safety
-    ///
-    /// The range must be a forgotten [`Segment`] that matches the type `M`.
-    /// It could be manually forgotten by [`core::mem::forget`],
-    /// [`ManuallyDrop`], or [`Self::into_raw`].
-    //#[safety::precond::RefForgotten(Segment(range))]
+    #[safety {
+        RefForgotten("the segment"): "for a Segment matching the type `M` derived from range"
+    }]
     pub(crate) unsafe fn from_raw(range: Range<Paddr>) -> Self {
         debug_assert_eq!(range.start % PAGE_SIZE, 0);
         debug_assert_eq!(range.end % PAGE_SIZE, 0);

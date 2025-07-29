@@ -10,6 +10,8 @@ use super::{
 };
 use crate::mm::{frame::mapping, Paddr, PagingConsts, PagingLevel, PAGE_SIZE};
 
+use safety_macro::safety;
+
 /// An owning frame pointer.
 ///
 /// Unlike [`Frame`], the frame pointed to by this pointer is not shared with
@@ -137,6 +139,9 @@ impl<M: AnyFrameMeta + ?Sized> UniqueFrame<M> {
     /// The caller must ensure that the physical address is valid and points to
     /// a forgotten frame that was previously casted by [`Self::into_raw`].
     //#[safety::precond::RefForgotten(Frame(paddr))]
+    #[safety {
+        RefForgotten("the frame") : "for the frame pointed by the addr"
+    }]
     pub(crate) unsafe fn from_raw(paddr: Paddr) -> Self {
         let vaddr = mapping::frame_to_meta::<PagingConsts>(paddr);
         let ptr = vaddr as *const MetaSlot;

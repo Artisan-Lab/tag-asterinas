@@ -1550,16 +1550,18 @@ checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
 
 [[package]]
 name = "safety-macro"
-version = "0.2.0"
-source = "git+https://github.com/os-checker/tag-std?rev=1cbf699#1cbf6997e8cca46dff7b282f051302bd0474250f"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2b7e662778e44ba4398b4e8e09b72645e909e78b01b95787274c829983bef93"
 dependencies = [
  "safety-parser",
 ]
 
 [[package]]
 name = "safety-parser"
-version = "0.2.0"
-source = "git+https://github.com/os-checker/tag-std?rev=1cbf699#1cbf6997e8cca46dff7b282f051302bd0474250f"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4abde8c5a3a62780c70255e07ef68354c60df99dc2a427fae2fa84a1370bc57a"
 dependencies = [
  "indexmap",
  "proc-macro2",

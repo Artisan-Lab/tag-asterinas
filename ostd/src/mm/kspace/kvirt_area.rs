@@ -128,11 +128,9 @@ impl KVirtArea {
     ///    area size;
     ///  - the provided physical range contains tracked physical addresses.
 
-    // #[safety::precond::Align(area_size, PAGE_SIZE)]
-    // #[safety::precond::Align(map_offset, PAGE_SIZE)]
-    // #[safety::precond::Align(pa_range, PAGE_SIZE)]
-    // #[safety::precond::Le(map_offset + pa_range.len(), area_size)]
-    // #[safety::precond::FrameUntracked(pa_range)]
+    #[safety {
+        Untracked("The physical addresses within pa_range")
+    }]
     pub unsafe fn map_untracked_frames(
         area_size: usize,
         map_offset: usize,

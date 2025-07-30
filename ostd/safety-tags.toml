@@ -3,44 +3,86 @@ package.name = "asterinas"
 # Execution Sequence
 [tag.PostToFunc]
 args = [ "func" ]
-desc = "should be executed after [`{func}`]"
+desc = "This function should be executed after {func}."
 
 [tag.NotPostToFunc]
 args = [ "func" ]
-desc = "should not be executed after [`{func}`]"
+desc = "This function should not be executed after {func}."
+
+[tag.NotPriorToFunc]
+args = [ "func" ]
+desc = "This function should not be executed before {func}."
 
 [tag.ValDerived]
 args = [ "val", "func" ]
-desc = "{val} should be validly derived from [`{func}`]"
+desc = "{val} should be validly derived from {func}."
 
 [tag.CallOnce]
 args = [ "scope" ] #scope ∈ {system, core}
-desc = "should be called only once per {scope}"
+desc = "This function should be called only once per {scope}."
 
 [tag.Context]
 args = [ "after", "before" ]
-desc = "should be executed after {after} before {before}"
+desc = "This function should be executed after {after} before {before}."
 
 #Value
 [tag.Eq]
 args = [ "lhs", "rhs"]
-desc = "{lhs} should equal to {rhs}"
+desc = "{lhs} should equal to {rhs}."
 
 #Valid
 [tag.Valid]
-args = ["val" ]
-desc = "{val} should be valid"
+args = [ "val" ]
+desc = "{val} should be valid."
+
+[tag.ValidUse]
+args = [ "val", "use" ]
+desc = "{val} should be valid for {use}."
 
 #Reference
 [tag.MutExclusive]
 args = [ "val", "action" ]
 types = [ "hazard" ]
-desc = "{action} should have exclusive access to {val}"
+desc = "{action} should have exclusive access to {val}."
 
 [tag.RefHeld]
 args = [ "val" ]
-desc = "the caller must have already held a reference to {val}"
+desc = "The caller must have already held a reference to {val}."
+
+[tag.RefUnheld]
+args = [ "val" ]
+desc = "The caller must not have already held a reference to {val}."
 
 [tag.RefForgotten]
 args = [ "val" ]
 desc = "{val} must be forgotten by [`core::mem::forget`], [`ManuallyDrop`], or [`into_raw`]."
+
+#Misc
+[tag.Untracked]
+args = [ "val" ]
+desc = "{val} should be untracked."
+
+[tag.UserSpace]
+args = [ "start", "end" ]
+desc = "{start}..{end} should be within user space."
+
+[tag.KernelMemorySafe]
+args = [ "val" ]
+desc = "{val} does not affect kernel's memory safety."
+
+[tag.UnAltered]
+args = [ "val" ]
+types = [ "hazard" ]
+desc = "{val} should not be altered."
+
+[tag.Bounded]
+args = [ "val", "bound" ]
+desc = "{val} should be bounded by {bound}."
+
+[tag.LockHeld]
+args = [ "val" ]
+desc = "{val} should have already held the lock."
+
+[tag.Memo]
+args = [ "desc" ]
+desc = "{desc}."

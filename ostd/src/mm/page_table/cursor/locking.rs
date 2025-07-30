@@ -201,13 +201,11 @@ fn dfs_acquire_lock<C: PageTableConfig>(
 }
 
 /// Releases the locks for the given range in the sub-tree rooted at the node.
-///
-/// # Safety
-///
-/// The caller must ensure that the nodes in the specified sub-tree are locked
-/// and all guards are forgotten.
-
-// #[safety::precond::SubtreeGuardForgotten(cur_node)]
+#[safety {
+    NotPostToFunc(dfs_mark_stray_and_unlock),
+    NotPostToFunc(dfs_release_lock),
+    RefForgotten(cur_node) : "For cur_node:"
+}]
 unsafe fn dfs_release_lock<'rcu, C: PageTableConfig>(
     guard: &'rcu dyn InAtomicMode,
     mut cur_node: PageTableGuard<'rcu, C>,
@@ -247,14 +245,14 @@ unsafe fn dfs_release_lock<'rcu, C: PageTableConfig>(
 ///
 /// This function returns the number of physical frames mapped in the sub-tree.
 ///
-/// # Safety
-///
-/// The caller must ensure that all the nodes in the sub-tree are locked
-/// and all guards are forgotten.
-///
 /// This function must not be called upon a shared node, e.g., the second-
 /// top level nodes that the kernel space and user space share.
-
+#[safety {
+    NotPostToFunc("[`locking::unlock_range`]"),
+    NotPostToFunc(dfs_mark_stray_and_unlock),
+    NotPostToFunc(dfs_release_lock),
+    RefForgotten(sub_tree) : "For sub_tree:"
+}]
 pub(super) unsafe fn dfs_mark_stray_and_unlock<C: PageTableConfig>(
     rcu_guard: &dyn InAtomicMode,
     mut sub_tree: PageTableGuard<C>,

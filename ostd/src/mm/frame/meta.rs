@@ -51,7 +51,6 @@ use core::{
 
 use align_ext::AlignExt;
 use log::info;
-use safety::safety;
 
 use crate::{
     arch::mm::PagingConsts,
@@ -68,6 +67,8 @@ use crate::{
     panic::abort,
     util::ops::range_difference,
 };
+
+use safety::safety;
 
 /// The maximum number of bytes of the metadata of a frame.
 pub const FRAME_METADATA_MAX_SIZE: usize = META_SLOT_SIZE
@@ -302,12 +303,9 @@ impl MetaSlot {
     }
 
     /// Increases the frame reference count by one.
-    ///
-    /// # Safety
-    ///
-    /// The caller must have already held a reference to the frame.
-    
-    // #[safety::precond::SlotFrameRefHeld(self)]
+    #[safety {
+        RefHeld("the frame"): "For a frame derived from Self"
+    }]
     pub(super) unsafe fn inc_ref_count(&self) {
         let last_ref_cnt = self.ref_count.fetch_add(1, Ordering::Relaxed);
         debug_assert!(last_ref_cnt != 0 && last_ref_cnt != REF_COUNT_UNUSED);
@@ -326,17 +324,10 @@ impl MetaSlot {
     }
 
     /// Gets a dynamically typed pointer to the stored metadata.
-    ///
-    /// # Safety
-    ///
-    /// The caller should ensure that:
-    ///  - the stored metadata is initialized (by [`Self::write_meta`]) and valid.
-    ///
-    /// The returned pointer should not be dereferenced as mutable unless having
-    /// exclusive access to the metadata slot.
-
-    // #[safety::precond::PostToFunc(NULL, MetaSlot::write_meta, self, *)]
-    // #[safety::postcond::MutExclusive(ReturnValue)]
+    #[safety {
+        ValDerived("The stored metadata", Self::write_meta),
+        MutExclusive("The metadata slot", "mutating through the returned pointer")
+    }]
     pub(super) unsafe fn dyn_meta_ptr(&self) -> *mut dyn AnyFrameMeta {
         // SAFETY: The page metadata is valid to be borrowed immutably, since
         // it will never be borrowed mutably after initialization.
@@ -360,20 +351,17 @@ impl MetaSlot {
     ///  - the initialized metadata is of type `M`;
     ///  - the returned pointer should not be dereferenced as mutable unless
     ///    having exclusive access to the metadata slot.
-
-    // #[safety::postcond::PriorToFunc(MetaSlot::write_meta, ReturnValue, Instance(M))]
-    // #[safety::postcond::MutExclusive(ReturnValue)]
+    //#[safety::postcond::PriorToFunc(MetaSlot::write_meta::<M>)]
+    //#[safety::postcond::MutExclusive(RETURN_VALUE)]
     pub(super) fn as_meta_ptr<M: AnyFrameMeta>(&self) -> *mut M {
         self.storage.get() as *mut M
     }
 
     /// Writes the metadata to the slot without reading or dropping the previous value.
-    ///
-    /// # Safety
-    ///
-    /// The caller should have exclusive access to the metadata slot's fields.
-    
-    // #[safety::global::MutExclusive(self)]
+    #[safety {
+        MutExclusive(self.vtable_ptr, ""),
+        MutExclusive(self.storage, "")
+    }]
     pub(super) unsafe fn write_meta<M: AnyFrameMeta>(&self, metadata: M) {
         const { assert!(size_of::<M>() <= FRAME_METADATA_MAX_SIZE) };
         const { assert!(align_of::<M>() <= FRAME_METADATA_MAX_ALIGN) };
@@ -392,15 +380,10 @@ impl MetaSlot {
     }
 
     /// Drops the metadata and deallocates the frame.
-    ///
-    /// # Safety
-    ///
-    /// The caller should ensure that:
-    ///  - the reference count is `0` (so we are the sole owner of the frame);
-    ///  - the metadata is initialized;
-
-    // #[safety::precond::Equal(self.ref_count, 0)]
-    // #[safety::precond::Initialized(self.storage)]
+    #[safety {
+        Eq(self.ref_count, 0),
+        ValDerived("the meta data", Self::write_meta)
+    }]
     pub(super) unsafe fn drop_last_in_place(&self) {
         // This should be guaranteed as a safety requirement.
         debug_assert_eq!(self.ref_count.load(Ordering::Relaxed), 0);
@@ -417,16 +400,10 @@ impl MetaSlot {
     ///
     /// After this operation, the metadata becomes uninitialized. Any access to the
     /// metadata is undefined behavior unless it is re-initialized by [`Self::write_meta`].
-    ///
-    /// # Safety
-    ///
-    /// The caller should ensure that:
-    ///  - the reference count is `0` (so we are the sole owner of the frame);
-    ///  - the metadata is initialized;
-    ///
-
-    // #[safety::precond::Equal(self.ref_count, 0)]
-    // #[safety::precond::Initialized(self.storage)]
+    #[safety {
+        Eq(self.ref_count, 0),
+        ValDerived("the meta data", Self::write_meta)
+    }]
     pub(super) unsafe fn drop_meta_in_place(&self) {
         let paddr = self.frame_paddr();
 
@@ -464,14 +441,10 @@ impl_frame_meta_for!(MetaPageMeta);
 /// Initializes the metadata of all physical frames.
 ///
 /// The function returns a list of `Frame`s containing the metadata.
-///
-/// # Safety
-///
-/// 1. This function should be called only once.
-/// 2. This function should be called only on the BSP and before any APs are started.
-
-// #[safety::global::CallOnce]
-// #[safety::global::Context(BSP_BUT_AP)] //todo:: need definition of BSP_BUT_AP
+#[safety {
+    CallOnce(system),
+    Context("BSP is started", "any AP is started")
+}]
 pub(crate) unsafe fn init() -> Segment<MetaPageMeta> {
     let max_paddr = {
         let regions = &crate::boot::EARLY_INFO.get().unwrap().memory_regions;

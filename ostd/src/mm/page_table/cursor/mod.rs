@@ -440,12 +440,10 @@ impl<'rcu, C: PageTableConfig> CursorMut<'rcu, C> {
     ///  - the virtual address range to be mapped is out of the locked range;
     ///  - the current virtual address is not aligned to the page size of the
     ///    item to be mapped;
-    ///
-    /// # Safety
-    ///
-    /// The caller should ensure that
-    ///  - the range being mapped does not affect kernel's memory safety;
-    ///  - the physical address to be mapped is valid and safe to use;
+    #[safety {
+        KernelMemorySafe("The range being mapped"),
+        Valid("The physical address to be mapped")
+    }]
     pub unsafe fn map(&mut self, item: C::Item) -> Result<(), PageTableFrag<C>> {
         assert!(self.0.va < self.0.barrier_va.end);
         let (pa, level, prop) = C::item_into_raw(item);
@@ -510,18 +508,15 @@ impl<'rcu, C: PageTableConfig> CursorMut<'rcu, C> {
     ///
     /// The caller should handle TLB coherence if necessary, using the returned
     /// virtual address range.
-    ///
-    /// # Safety
-    ///
-    /// The caller should ensure that the range being unmapped does not affect
-    /// kernel's memory safety.
-    ///
+    /// 
     /// # Panics
     ///
     /// Panics if:
     ///  - the length is longer than the remaining range of the cursor;
     ///  - the length is not page-aligned.
-
+    #[safety {
+        KernelMemorySafe("The range being unmapped")
+    }]
     pub unsafe fn take_next(&mut self, len: usize) -> Option<PageTableFrag<C>> {
         self.0.find_next_impl(len, true, true)?;
 
@@ -545,20 +540,18 @@ impl<'rcu, C: PageTableConfig> CursorMut<'rcu, C> {
     /// protected one. If no mapped pages exist in the following range, the
     /// cursor will stop at the end of the range and return [`None`].
     ///
-    /// # Safety
-    ///
-    /// The caller should ensure that:
-    ///  - the range being protected with the operation does not affect
-    ///    kernel's memory safety;
-    ///  - the privileged flag `AVAIL1` should not be altered if in the kernel
-    ///    page table (the restriction may be lifted in the futures).
-    ///
     /// # Panics
     ///
     /// Panics if:
     ///  - the length is longer than the remaining range of the cursor;
     ///  - the length is not page-aligned.
 
+    #[safety {
+        KernelMemorySafe("The range being unmapped"),
+    }]
+    #[safety {
+        UnAltered("The privileged flag `AVAIL1`") : "If in the kernel page table (the restriction may be lifted in the futures):"
+    }]
     pub unsafe fn protect_next(
         &mut self,
         len: usize,

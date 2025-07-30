@@ -4,13 +4,13 @@
 
 use core::{marker::PhantomData, mem::ManuallyDrop, sync::atomic::Ordering};
 
-use safety::safety;
-
 use super::{
     meta::{GetFrameError, REF_COUNT_UNIQUE},
     AnyFrameMeta, Frame, MetaSlot,
 };
 use crate::mm::{frame::mapping, Paddr, PagingConsts, PagingLevel, PAGE_SIZE};
+
+use safety::safety;
 
 /// An owning frame pointer.
 ///
@@ -133,13 +133,9 @@ impl<M: AnyFrameMeta + ?Sized> UniqueFrame<M> {
     }
 
     /// Restores a raw physical address back into a unique frame.
-    ///
-    /// # Safety
-    ///
-    /// The caller must ensure that the physical address is valid and points to
-    /// a forgotten frame that was previously casted by [`Self::into_raw`].
-    
-    // #[safety::precond::FrameForgotten(paddr)]
+    #[safety {
+        RefForgotten("The frame") : "For the frame pointed by the addr"
+    }]
     pub(crate) unsafe fn from_raw(paddr: Paddr) -> Self {
         let vaddr = mapping::frame_to_meta::<PagingConsts>(paddr);
         let ptr = vaddr as *const MetaSlot;

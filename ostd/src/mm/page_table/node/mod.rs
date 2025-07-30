@@ -98,7 +98,10 @@ impl<C: PageTableConfig> PageTableNode<C> {
     ///
     /// Only top-level page tables can be activated using this function.
     
-    // #[safety::precond::ProperMapping(self)]
+    
+    #[safety {
+        Valid("The page table, from the perspective of mapping and level,")
+    }]
     pub(crate) unsafe fn activate(&self) {
         use crate::{
             arch::mm::{activate_page_table, current_page_table_paddr},
@@ -125,7 +128,12 @@ impl<C: PageTableConfig> PageTableNode<C> {
     /// It will not try dropping the last activate page table. It is the same
     /// with [`Self::activate()`] in other senses.
     
-    // #[safety::global::CallOnce]
+    #[safety {
+        CallOnce(system)
+    }]
+    #[safety {
+        Valid("The page table, from the perspective of mapping and level,")
+    }]
     pub(super) unsafe fn first_activate(&self) {
         use crate::{arch::mm::activate_page_table, mm::CachePolicy};
 
@@ -160,15 +168,11 @@ impl<'a, C: PageTableConfig> PageTableNodeRef<'a, C> {
     }
 
     /// Creates a new [`PageTableGuard`] without checking if the page table lock is held.
-    ///
-    /// # Safety
-    ///
-    /// This function must be called if this task logically holds the lock.
-    ///
+    #[safety {
+        LockHeld("The task"),
+    }]
     /// Calling this function when a guard is already created is undefined behavior
     /// unless that guard was already forgotten.
-    
-    // #[safety::precond::LockHeld]
     pub(super) unsafe fn make_guard_unchecked<'rcu>(
         self,
         _guard: &'rcu dyn InAtomicMode,
@@ -216,12 +220,10 @@ impl<'rcu, C: PageTableConfig> PageTableGuard<'rcu, C> {
     /// A non-owning PTE means that it does not account for a reference count
     /// of the a page if the PTE points to a page. The original PTE still owns
     /// the child page.
-    ///
-    /// # Safety
-    ///
-    /// The caller must ensure that the index is within the bound.
-    
-    // #[safety::precond::PteIndexBounded(self, idx)]
+    ///    
+    #[safety {
+        Bounded(idx, "the bounds of the node")
+    }]
     pub(super) unsafe fn read_pte(&self, idx: usize) -> C::E {
         debug_assert!(idx < nr_subpage_per_huge::<C>());
         let ptr = paddr_to_vaddr(self.start_paddr()) as *mut C::E;
@@ -234,16 +236,12 @@ impl<'rcu, C: PageTableConfig> PageTableGuard<'rcu, C> {
     /// Writes a page table entry at a given index.
     ///
     /// This operation will leak the old child if the old PTE is present.
-    ///
-    /// # Safety
-    ///
-    /// The caller must ensure that:
-    ///  1. The index must be within the bound;
-    ///  2. The PTE must represent a [`Child`] in the same [`PageTableConfig`]
-    ///     and at the right paging level (`self.level() - 1`).
-    ///  3. The page table node will have the ownership of the [`Child`]
-    ///     after this method.
 
+    #[safety {
+        Bounded(idx, "the bound of the node"),
+        Valid("The Child represented by pte, form the perspective of [`PageTableConfig`] and the paging level,")
+        Memo("The page table node will have the ownership of the [`Child`] after this method.")
+    }]
     pub(super) unsafe fn write_pte(&mut self, idx: usize, pte: C::E) {
         debug_assert!(idx < nr_subpage_per_huge::<C>());
         let ptr = paddr_to_vaddr(self.start_paddr()) as *mut C::E;

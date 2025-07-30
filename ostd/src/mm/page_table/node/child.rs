@@ -43,14 +43,13 @@ impl<C: PageTableConfig> Child<C> {
         }
     }
 
-    /// # Safety
-    ///
-    /// The provided PTE must be the output of [`Self::into_pte`], and the PTE:
-    ///  - must not be used to created a [`Child`] twice;
-    ///  - must not be referenced by a living [`ChildRef`].
-    ///
-    /// The level must match the original level of the child.
-
+    #[safety {
+        CallOnce(pte),
+        Valid(level)
+    }]
+    #[safety {
+        RefUnheld(pte): "For reference created by `ChildRef`"
+    }]
     pub(super) unsafe fn from_pte(pte: C::E, level: PagingLevel) -> Self {
         if !pte.is_present() {
             return Child::None;
@@ -94,6 +93,10 @@ impl<C: PageTableConfig> ChildRef<'_, C> {
     /// The provided level must be the same with the level of the page table
     /// node that contains this PTE.
 
+    #[safety {
+        PostToFunc("[`Child::into_pte`]"),
+        Valid(level)
+    }]
     pub(super) unsafe fn from_pte(pte: &C::E, level: PagingLevel) -> Self {
         if !pte.is_present() {
             return ChildRef::None;

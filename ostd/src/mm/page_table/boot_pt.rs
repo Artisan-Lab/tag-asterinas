@@ -73,10 +73,15 @@ where
 ///  - no [`with_borrow`] calls are performed on this CPU after the activation
 ///    of another page table and before this dismissal.
 
-// #[safety::global::TaggedCallOnce(CPU_ID)]
-// #[safety::precond::NonBootPTActivated]
-// #[safety::precond::NotPostToFunc(with_borrow)]
-// #[safety::postcond::NotPriorToFunc(with_borrow)]
+#[safety {
+    CallOnce(cpu)
+}]
+#[safety {
+    NotPostToFunc("`with_borrow`"): "After another page table has been activated"
+}]
+#[safety {
+    NotPriorToFunc("`with_borrow`"): "For this dismissal"
+}]
 pub(crate) unsafe fn dismiss() {
     IS_DISMISSED.store(true);
     if DISMISS_COUNT.fetch_add(1, Ordering::SeqCst) as usize == num_cpus() - 1 {
@@ -133,15 +138,12 @@ const PTE_POINTS_TO_FIRMWARE_PT: PageFlags = PageFlags::AVAIL1;
 impl<E: PageTableEntryTrait, C: PagingConstsTrait> BootPageTable<E, C> {
     /// Creates a new boot page table from the current page table root
     /// physical address.
-    ///
-    /// # Safety
-    ///
-    /// This function should be called only once in the initialization phase.
+    #[safety {
+        CallOnce(system),
+        //Context
+    }]
     /// Otherwise, It would lead to double-drop of the page table frames set up
     /// by the firmware, loader or the setup code.
-
-    // #[safety::global::CallOnce]
-    // #[safety::global::Context(PAGETABLE_INITIALIZE)]
     unsafe fn from_current_pt() -> Self {
         let root_pt = crate::arch::mm::current_page_table_paddr() / C::BASE_PAGE_SIZE;
         // Make sure the 2 available bits are not set for firmware page tables.
@@ -166,13 +168,9 @@ impl<E: PageTableEntryTrait, C: PagingConstsTrait> BootPageTable<E, C> {
     /// # Panics
     ///
     /// This function will panic if the page is already mapped.
-    ///
-    /// # Safety
-    ///
-    /// This function is unsafe because it can cause undefined behavior if the caller
-    /// maps a page in the kernel address space.
-    
-    // #[safety::precond::ValidKernelMapping(from)]
+    #[safety {
+        KernelMemorySafe("The mapping")
+    }]
     pub unsafe fn map_base_page(&mut self, from: Vaddr, to: FrameNumber, prop: PageProperty) {
         let mut pt = self.root_pt;
         let mut level = C::NR_LEVELS;
@@ -210,13 +208,9 @@ impl<E: PageTableEntryTrait, C: PagingConstsTrait> BootPageTable<E, C> {
     /// # Panics
     ///
     /// This function will panic if the page is already mapped.
-    ///
-    /// # Safety
-    ///
-    /// This function is unsafe because it can cause undefined behavior if the caller
-    /// maps a page in the kernel address space.
-    
-    // #[safety::precond::ValidKernelMapping(virt_addr)]
+    #[safety {
+        KernelMemorySafe("The mapping")
+    }]
     pub unsafe fn protect_base_page(
         &mut self,
         virt_addr: Vaddr,

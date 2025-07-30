@@ -4,14 +4,14 @@
 
 use core::{fmt::Debug, mem::ManuallyDrop, ops::Range};
 
-use safety::safety;
-
 use super::{
     inc_frame_ref_count,
     meta::{AnyFrameMeta, GetFrameError},
     Frame,
 };
 use crate::mm::{AnyUFrameMeta, Paddr, PAGE_SIZE};
+
+use safety::safety;
 
 /// A contiguous range of homogeneous physical memory frames.
 ///
@@ -111,14 +111,9 @@ impl<M: AnyFrameMeta> Segment<M> {
     }
 
     /// Restores the [`Segment`] from the raw physical address range.
-    ///
-    /// # Safety
-    ///
-    /// The range must be a forgotten [`Segment`] that matches the type `M`.
-    /// It could be manually forgotten by [`core::mem::forget`],
-    /// [`ManuallyDrop`], or [`Self::into_raw`].
-    
-    // #[safety::precond::RangeSegmentForgotten(range)]
+    #[safety {
+        RefForgotten("The segment"): "For a Segment matching the type `M` derived from range"
+    }]
     pub(crate) unsafe fn from_raw(range: Range<Paddr>) -> Self {
         debug_assert_eq!(range.start % PAGE_SIZE, 0);
         debug_assert_eq!(range.end % PAGE_SIZE, 0);

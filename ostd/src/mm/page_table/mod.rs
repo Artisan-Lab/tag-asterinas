@@ -113,16 +113,12 @@ pub(crate) unsafe trait PageTableConfig:
     /// Splitting and coalescing maintains ownership rules, i.e., if one
     /// physical address is within the range of one item, after splitting/
     /// coalescing, there should be exactly one item that contains the address.
-    ///
-    /// # Safety
-    ///
-    /// The caller must ensure that:
-    ///  - the physical address and the paging level represent a page table
-    ///    item or part of it (as described above);
-    ///  - either the ownership of the item is properly transferred to the
-    ///    return value, or the return value is wrapped in a
-    ///    [`core::mem::ManuallyDrop`] that won't outlive the original item.
-    ///
+    #[safety {
+        Valid("The page table, represented by the physical address and the paging level,")
+    }]
+    #[safety {
+        Memo("Either the ownership of the item is properly transferred to the return value, or the return value is wrapped in a [`core::mem::ManuallyDrop`] that won't outlive the original item")
+    }]
     /// A concrete trait implementation may require the caller to ensure that
     ///  - the [`super::PageFlags::AVAIL1`] flag is the same as that returned
     ///    from [`PageTableConfig::item_into_raw`].
@@ -357,13 +353,10 @@ impl PageTable<KernelPtConfig> {
     /// Protect the given virtual address range in the kernel page table.
     ///
     /// This method flushes the TLB entries when doing protection.
-    ///
-    /// # Safety
-    ///
-    /// The caller must ensure that the protection operation does not affect
-    /// the memory safety of the kernel.
-    
-    // #[safety::precond::ProtectMemorySafe(vaddr)]
+
+    #[safety {
+        KernelMemorySafe("The protecting operation")
+    }]
     pub unsafe fn protect_flush_tlb(
         &self,
         vaddr: &Range<Vaddr>,
@@ -392,7 +385,9 @@ impl<C: PageTableConfig> PageTable<C> {
     }
 
     
-    // #[safety::global::CallOnce]
+    #[safety {
+        CallOnce(system)
+    }]
     pub(in crate::mm) unsafe fn first_activate_unchecked(&self) {
         // SAFETY: The safety is upheld by the caller.
         unsafe { self.root.first_activate() };
@@ -447,7 +442,9 @@ impl<C: PageTableConfig> PageTable<C> {
     /// The caller must ensure that the kernel page table is not copied.
     /// This is only useful for IOMMU page tables. Think twice before using it in other cases.
     
-    // #[safety::precond::Uncoppied(self)]
+    #[safety {
+        NotPostToFunc("copying the page table")
+    }]
     pub unsafe fn shallow_copy(&self) -> Self {
         PageTable {
             root: self.root.clone(),
@@ -477,6 +474,9 @@ impl<C: PageTableConfig> PageTable<C> {
 ///
 /// For the software page walk, we only need to disable preemption at the beginning
 /// since the page table nodes won't be recycled in the RCU critical section.
+#[safety {
+    Valid("The root page table node derived from `root_paddr`"):
+}]
 #[cfg(ktest)]
 pub(super) unsafe fn page_walk<C: PageTableConfig>(
     root_paddr: Paddr,
@@ -580,12 +580,9 @@ pub trait PageTableEntryTrait:
 }
 
 /// Loads a page table entry with an atomic instruction.
-///
-/// # Safety
-///
-/// The safety preconditions are same as those of [`AtomicUsize::from_ptr`].
-
-// #[safety::precond::SameAs(AtomicUsize::from_ptr)]
+#[safety {
+    Memo("The safety preconditions are same as those of [`AtomicUsize::from_ptr`].")
+}]
 pub unsafe fn load_pte<E: PageTableEntryTrait>(ptr: *mut E, ordering: Ordering) -> E {
     // SAFETY: The safety is upheld by the caller.
     let atomic = unsafe { AtomicUsize::from_ptr(ptr.cast()) };
@@ -594,12 +591,9 @@ pub unsafe fn load_pte<E: PageTableEntryTrait>(ptr: *mut E, ordering: Ordering) 
 }
 
 /// Stores a page table entry with an atomic instruction.
-///
-/// # Safety
-///
-/// The safety preconditions are same as those of [`AtomicUsize::from_ptr`].
-
-// #[safety::precond::SameAs(AtomicUsize::from_ptr)]
+#[safety {
+    Memo("The safety preconditions are same as those of [`AtomicUsize::from_ptr`].")
+}]
 pub unsafe fn store_pte<E: PageTableEntryTrait>(ptr: *mut E, new_val: E, ordering: Ordering) {
     let new_raw = new_val.as_usize();
     // SAFETY: The safety is upheld by the caller.

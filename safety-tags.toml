@@ -1,0 +1,46 @@
+package.name = "asterinas"
+
+# Execution Sequence
+[tag.PostToFunc]
+args = [ "func" ]
+desc = "should be executed after [`{func}`]"
+
+[tag.NotPostToFunc]
+args = [ "func" ]
+desc = "should not be executed after [`{func}`]"
+
+[tag.ValDerived]
+args = [ "val", "func" ]
+desc = "{val} should be validly derived from [`{func}`]"
+
+[tag.CallOnce]
+args = [ "scope" ] #scope ∈ {system, core}
+desc = "should be called only once per {scope}"
+
+[tag.Context]
+args = [ "after", "before" ]
+desc = "should be executed after {after} before {before}"
+
+#Value
+[tag.Eq]
+args = [ "lhs", "rhs"]
+desc = "{lhs} should equal to {rhs}"
+
+#Valid
+[tag.Valid]
+args = ["val" ]
+desc = "{val} should be valid"
+
+#Reference
+[tag.MutExclusive]
+args = [ "val", "action" ]
+types = [ "hazard" ]
+desc = "{action} should have exclusive access to {val}"
+
+[tag.RefHeld]
+args = [ "val" ]
+desc = "the caller must have already held a reference to {val}"
+
+[tag.RefForgotten]
+args = [ "val" ]
+desc = "{val} must be forgotten by [`core::mem::forget`], [`ManuallyDrop`], or [`into_raw`]."

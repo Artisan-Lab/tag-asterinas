@@ -343,7 +343,8 @@ check: initramfs $(CARGO_OSDK)
 	@# Check typos
 	@typos
 
-RAPX_EXIT_AND_EMIT ?= abort_and_emit
+# RAPX_EXIT_AND_EMIT ?= abort_and_emit
+RAPX_EXIT_AND_EMIT ?= silence_and_emit
 RAPX_RUSTFLAGS     ?= --check-cfg cfg(ktest) --cfg ktest
 
 .PHONY: rapx

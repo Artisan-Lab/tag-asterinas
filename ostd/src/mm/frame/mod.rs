@@ -203,7 +203,7 @@ impl<M: AnyFrameMeta + ?Sized> Frame<M> {
 
     /// Restores a forgotten [`Frame`] from a physical address.
     #[safety {
-        RefForgotten("the frame") : "for the frame pointed by paddr"
+        RefForgotten("The frame") : "For the frame pointed by paddr"
     }]
     pub(in crate::mm) unsafe fn from_raw(paddr: Paddr) -> Self {
         debug_assert!(paddr < max_paddr());
@@ -311,8 +311,8 @@ impl TryFrom<Frame<dyn AnyFrameMeta>> for UFrame {
 
 /// Increases the reference count of the frame by one.
 #[safety {
-    Valid("the frame"),
-    RefHeld("the frame") : "for a frame derived from paddr"
+    Valid("The frame"),
+    RefHeld("The frame") : "For a frame derived from paddr"
 }]
 pub(in crate::mm) unsafe fn inc_frame_ref_count(paddr: Paddr) {
     debug_assert!(paddr % PAGE_SIZE == 0);

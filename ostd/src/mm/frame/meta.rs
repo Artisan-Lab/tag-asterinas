@@ -304,7 +304,7 @@ impl MetaSlot {
 
     /// Increases the frame reference count by one.
     #[safety {
-        RefHeld("the frame") : "for a frame derived from Self"
+        RefHeld("the frame"): "for a frame derived from Self"
     }]
     pub(super) unsafe fn inc_ref_count(&self) {
         let last_ref_cnt = self.ref_count.fetch_add(1, Ordering::Relaxed);
@@ -325,8 +325,8 @@ impl MetaSlot {
 
     /// Gets a dynamically typed pointer to the stored metadata.
     #[safety {
-        ValDerived("the stored metadata", Self::write_meta),
-        MutExclusive("the metadata slot", "mutating through the returned pointer")
+        ValDerived("The stored metadata", Self::write_meta),
+        MutExclusive("The metadata slot", "mutating through the returned pointer")
     }]
     pub(super) unsafe fn dyn_meta_ptr(&self) -> *mut dyn AnyFrameMeta {
         // SAFETY: The page metadata is valid to be borrowed immutably, since

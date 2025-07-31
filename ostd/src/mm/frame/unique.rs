@@ -133,14 +133,8 @@ impl<M: AnyFrameMeta + ?Sized> UniqueFrame<M> {
     }
 
     /// Restores a raw physical address back into a unique frame.
-    ///
-    /// # Safety
-    ///
-    /// The caller must ensure that the physical address is valid and points to
-    /// a forgotten frame that was previously casted by [`Self::into_raw`].
-    //#[safety::precond::RefForgotten(Frame(paddr))]
     #[safety {
-        RefForgotten("the frame") : "for the frame pointed by the addr"
+        RefForgotten("The frame") : "For the frame pointed by the addr"
     }]
     pub(crate) unsafe fn from_raw(paddr: Paddr) -> Self {
         let vaddr = mapping::frame_to_meta::<PagingConsts>(paddr);

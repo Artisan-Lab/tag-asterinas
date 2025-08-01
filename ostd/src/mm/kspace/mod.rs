@@ -240,11 +240,9 @@ pub fn init_kernel_page_table(meta_pages: Segment<MetaPageMeta>) {
 }
 
 /// Activates the kernel page table.
-///
-/// # Safety
-///
-/// This function should only be called once per CPU.
-//#[safety::global::TaggedCallOnce(CPU_ID)]
+#[safety {
+    CallOnce("per CPU")
+}]
 pub unsafe fn activate_kernel_page_table() {
     let kpt = KERNEL_PAGE_TABLE
         .get()

@@ -43,4 +43,9 @@ desc = "the caller must have already held a reference to {val}"
 
 [tag.RefForgotten]
 args = [ "val" ]
-desc = "{val} must be forgotten by [`core::mem::forget`], [`ManuallyDrop`], or [`into_raw`]."
+desc = "{val} must be forgotten by [`core::mem::forget`], [`ManuallyDrop`], or [`into_raw`]"
+
+#Misc
+[tag.Untracked]
+args = [ "val" ]
+desc = "{val} should be untracked"

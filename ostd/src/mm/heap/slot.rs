@@ -12,6 +12,8 @@ use crate::{
     },
 };
 
+use safety_macro::safety;
+
 /// A slot that will become or has been turned from a heap allocation.
 ///
 /// Heap slots can come from [`Slab`] or directly from a typed [`Segment`].
@@ -57,15 +59,10 @@ impl SlotInfo {
 
 impl HeapSlot {
     /// Creates a new pointer to a heap slot.
-    ///
-    /// # Safety
-    ///
-    /// The pointer to the slot must either:
-    ///  - be a free slot in a [`super::Slab`], or
-    ///  - be a free slot in a [`Segment`].
-    ///
-    /// If the pointer is from a [`super::Slab`] or [`Segment`], the slot must
-    /// have a size that matches the slot size of the slab or segment respectively.
+    #[safety {
+        Valid("the slot, either a free slot in a [`super::Slab`] or [`Segment`] with corresponding size,") : "for the slot pointed by addr"
+    }]
+
     pub(super) unsafe fn new(addr: NonNull<u8>, info: SlotInfo) -> Self {
         Self { addr, info }
     }

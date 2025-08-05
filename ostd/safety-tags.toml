@@ -49,3 +49,12 @@ desc = "`{val}` must be forgotten by [`core::mem::forget`], [`ManuallyDrop`], or
 [tag.Untracked]
 args = [ "val" ]
 desc = "`{val}` should be untracked."
+
+[tag.KernelMemorySafe]
+args = [ "val" ]
+desc = "`{val}` does not affect kernel's memory safety."
+
+[tag.UnAltered]
+args = [ "val" ]
+types = [ "hazard" ]
+desc = "`{val}` should not be altered."

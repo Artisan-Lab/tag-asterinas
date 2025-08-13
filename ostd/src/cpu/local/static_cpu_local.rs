@@ -141,6 +141,9 @@ impl<T: 'static> CpuLocal<T, StaticStorage<T>> {
     /// function resides in the `.cpu_local` section. Otherwise the
     /// behavior is undefined.
     #[doc(hidden)]
+    #[safety {
+        Section("The object", "the `.cpu_local` section"): "For the object initialized by this function"
+    }]
     pub const unsafe fn __new_static(val: T) -> Self {
         Self {
             storage: StaticStorage(val),

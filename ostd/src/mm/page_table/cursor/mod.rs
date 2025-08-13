@@ -550,7 +550,7 @@ impl<'rcu, C: PageTableConfig> CursorMut<'rcu, C> {
         KernelMemorySafe("The range being unmapped"),
     }]
     #[safety {
-        UnAltered("The privileged flag `AVAIL1`") : "If in the kernel page table (the restriction may be lifted in the futures):"
+        Unaltered("The privileged flag `AVAIL1`") : "If in the kernel page table (the restriction may be lifted in the futures):"
     }]
     pub unsafe fn protect_next(
         &mut self,

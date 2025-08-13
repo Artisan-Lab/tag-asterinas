@@ -79,10 +79,14 @@ desc = "{start}..{end} should be within user space."
 args = [ "val" ]
 desc = "{val} does not affect kernel's memory safety."
 
-[tag.UnAltered]
+[tag.Unaltered]
 args = [ "val" ]
 types = [ "hazard" ]
 desc = "{val} should not be altered."
+
+[tag.Unaccessed]
+args = [ "val" ]
+desc = "{val} should bot be accessed."
 
 [tag.Bounded]
 args = [ "val", "bound" ]
@@ -92,6 +96,11 @@ desc = "{val} should be bounded by {bound}."
 args = [ "val" ]
 desc = "{val} should have already held the lock."
 
+[tag.Section]
+args = [ "val", "section" ]
+types = [ "hazard" ]
+dsec = "{val} should reside in {section}."
+
 [tag.Memo]
 args = [ "desc" ]
-desc = "{desc}."
+desc = "{desc}"

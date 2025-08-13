@@ -59,6 +59,8 @@ use crate::{
     trap::irq::DisabledLocalIrqGuard,
 };
 
+use safety::safety;
+
 /// Dynamically-allocated CPU-local objects.
 pub type DynamicCpuLocal<T> = CpuLocal<T, DynamicStorage<T>>;
 
@@ -188,17 +190,11 @@ static CPU_LOCAL_STORAGES: Once<&'static [Paddr]> = Once::new();
 
 /// Copies the static CPU-local data on the bootstrap processor (BSP)
 /// for application processors (APs).
-///
-/// # Safety
-///
-/// 1. This function must be called in the boot context of the BSP, at a time
-///    when the APs have not yet booted.
-/// 2. The CPU-local data on the BSP must not be used before calling this
-///    function to copy it for the APs. Otherwise, the copied data will
-///    contain non-constant (also non-`Copy`) data, resulting in undefined
-///    behavior when it's loaded on the APs.
-/// 3. The caller must ensure that the `num_cpus` matches the number of all
-///    CPUs that will access the CPU-local storage.
+#[safety {
+    Context("BSP has booted", "APs have not booted"),
+    Unaccessed("The CPU-local data"),
+    ContextVal(num_cpus, "the number of CPUs")
+}]
 pub(crate) unsafe fn copy_bsp_for_ap(num_cpus: usize) {
     let num_aps = num_cpus - 1; // BSP does not need allocated storage.
     if num_aps == 0 {

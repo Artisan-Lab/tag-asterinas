@@ -14,6 +14,8 @@ use crate::{
     Result,
 };
 
+use safety::safety;
+
 /// A dynamically-allocated storage for a CPU-local variable of type `T`.
 ///
 /// Such a CPU-local storage should be allocated and deallocated by
@@ -75,12 +77,10 @@ impl<T> CpuLocal<T, DynamicStorage<T>> {
     ///
     /// Please do not call this function directly. Instead, use
     /// `DynCpuLocalChunk::alloc`.
-    ///
-    /// # Safety
-    ///
-    /// The caller must ensure that the new per-CPU object belongs to an
-    /// existing [`DynCpuLocalChunk`], and does not overlap with any existing
-    /// CPU-local object.
+    #[safety {
+        ValDerived("The return value", "an existing [`DynCpuLocalChunk`]"),
+        Valid("The return value, not overlapping with any existing CPU-local object,")
+    }]
     unsafe fn __new_dynamic(ptr: *mut T, init_values: &mut impl FnMut(CpuId) -> T) -> Self {
         let mut storage = DynamicStorage(NonNull::new(ptr).unwrap());
         for cpu in all_cpus() {

@@ -9,6 +9,7 @@ pub use set::{AtomicCpuSet, CpuSet};
 
 pub use crate::arch::cpu::*;
 use crate::{cpu_local_cell, task::atomic_mode::InAtomicMode};
+use safety::safety;
 
 /// The ID of a CPU in the system.
 ///
@@ -63,13 +64,10 @@ impl TryFrom<usize> for CpuId {
 static mut NUM_CPUS: u32 = 1;
 
 /// Initializes the number of CPUs.
-///
-/// # Safety
-///
-/// The caller must ensure that
-/// 1. We're in the boot context of the BSP and APs have not yet booted.
-/// 2. The argument is the correct value of the number of CPUs (which
-///    is a constant, since we don't support CPU hot-plugging anyway).
+#[safety {
+    Context("BSP has booted", "APs have not booted"),
+    ContextVal(num_cpus, "the number of CPUs")
+}]
 unsafe fn init_num_cpus(num_cpus: u32) {
     assert!(num_cpus >= 1);
 
@@ -108,14 +106,10 @@ cpu_local_cell! {
 }
 
 /// Initializes the current CPU ID.
-///
-/// # Safety
-///
-/// This method must be called on each processor during the early
-/// boot phase of the processor.
-///
-/// The caller must ensure that this function is called with
-/// the correct value of the CPU ID.
+#[safety {
+    CallOnce(processor),
+    Valid("`id`"): "During the early boot phase"
+}]
 unsafe fn set_this_cpu_id(id: u32) {
     // FIXME: If there are safe APIs that rely on the correctness of
     // the CPU ID for soundness, we'd better make the CPU ID a global
@@ -153,12 +147,11 @@ pub unsafe trait PinCurrentCpu {
 unsafe impl<T: InAtomicMode> PinCurrentCpu for T {}
 unsafe impl PinCurrentCpu for dyn InAtomicMode + '_ {}
 
-/// # Safety
-///
-/// The caller must ensure that
-/// 1. We're in the boot context of the BSP and APs have not yet booted.
-/// 2. This function is called after the OS initializes the ACPI table.
-/// 3. No CPU-local objects have been accessed.
+#[safety {
+    Context("BSP has booted", "APs have not booted"),
+    Memo("This function is called after the OS initializes the ACPI table."),
+    Unaccessed("The CPU-local objects")
+}]
 pub(crate) unsafe fn init_on_bsp() {
     unsafe {
         let num_cpus = crate::arch::boot::smp::count_processors().unwrap_or(1);
@@ -175,11 +168,10 @@ pub(crate) unsafe fn init_on_bsp() {
     }
 }
 
-/// # Safety
-///
-/// The caller must ensure that:
-/// 1. We're in the boot context of an AP.
-/// 2. The CPU ID of the AP is `cpu_id`.
+#[safety {
+    Context("BSP has booted", "APs have not booted"),
+    ContextVal(cpu_id, "the CPU ID of the AP")
+}]
 pub(crate) unsafe fn init_on_ap(cpu_id: u32) {
     // SAFETY: The safety is upheld by the caller.
     unsafe { set_this_cpu_id(cpu_id) };

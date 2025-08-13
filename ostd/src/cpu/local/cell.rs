@@ -7,6 +7,8 @@ use core::cell::UnsafeCell;
 use super::{__cpu_local_end, __cpu_local_start, single_instr::*};
 use crate::arch;
 
+use safety::safety;
+
 /// Defines an inner-mutable CPU-local variable.
 ///
 /// The accessors of the CPU-local variables are defined with [`CpuLocalCell`].
@@ -83,13 +85,10 @@ impl<T: 'static> CpuLocalCell<T> {
     ///
     /// Please do not call this function directly. Instead, use the
     /// `cpu_local!` macro.
-    ///
-    /// # Safety
-    ///
-    /// The caller should ensure that the object initialized by this
-    /// function resides in the `.cpu_local` section. Otherwise the
-    /// behavior is undefined.
     #[doc(hidden)]
+    #[safety {
+        Section("The object", "the `.cpu_local` section"): "For the object initialized by this function"
+    }]
     pub const unsafe fn __new(val: T) -> Self {
         Self(UnsafeCell::new(val))
     }

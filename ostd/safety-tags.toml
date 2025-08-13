@@ -39,6 +39,10 @@ desc = "{lhs} should equal to {rhs}."
 args = [ "val" ]
 desc = "{val} should be valid."
 
+[tag.ValidBy]
+args = [ "val", "cond" ]
+desc = "{val} should be valid by {cond}."
+
 [tag.ValidUse]
 args = [ "val", "use" ]
 desc = "{val} should be valid for {use}."

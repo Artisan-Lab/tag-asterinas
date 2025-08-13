@@ -98,9 +98,8 @@ impl<C: PageTableConfig> PageTableNode<C> {
     ///
     /// Only top-level page tables can be activated using this function.
     
-    
     #[safety {
-        Valid("The page table, from the perspective of mapping and level,")
+        ValidBy("The page table", "having proper mapping and level")
     }]
     pub(crate) unsafe fn activate(&self) {
         use crate::{

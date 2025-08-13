@@ -13,6 +13,8 @@ use crate::{
     sync::{LocalIrqDisabled, SpinLock},
 };
 
+use safety::safety;
+
 /// I/O port allocator that allocates port I/O access to device drivers.
 pub struct IoPortAllocator {
     /// Each ID indicates whether a Port I/O (1B) is allocated.
@@ -40,10 +42,9 @@ impl IoPortAllocator {
     }
 
     /// Recycles an PIO range.
-    ///
-    /// # Safety
-    ///
-    /// The caller must have ownership of the PIO region through the `IoPortAllocator::acquire` interface.
+    #[safety {
+        PostToFunc("`IoPortAllocator::acquire`"): "With the ownership of the PIO region"
+    }]
     pub(in crate::io) unsafe fn recycle(&self, range: Range<u16>) {
         debug!("Recycling MMIO range: {:#x?}", range);
 
@@ -56,16 +57,10 @@ impl IoPortAllocator {
 pub(super) static IO_PORT_ALLOCATOR: Once<IoPortAllocator> = Once::new();
 
 /// Initializes the static `IO_PORT_ALLOCATOR` and removes the system device I/O port regions.
-///
-/// # Safety
-///
-/// User must ensure that:
-///
-/// 1. All the port I/O regions belonging to the system device are defined using the macros
-///    `sensitive_io_port` and `reserve_io_port_range`.
-///
-/// 2. `MAX_IO_PORT` defined in `crate::arch::io` is guaranteed not to exceed the maximum
-///    value specified by architecture.
+#[safety {
+    ValidBy("All the port I/O regions", "using the macros `sensitive_io_port` and `reserve_io_port_range`"),
+    ValidBy("`crate::arch::io::MAX_IO_PORT`", "not to exceeding the maximum value specified by architecture")
+}]
 pub(crate) unsafe fn init() {
     // SAFETY: `MAX_IO_PORT` is guaranteed not to exceed the maximum value specified by architecture.
     let mut allocator = IdAlloc::with_capacity(crate::arch::io::MAX_IO_PORT as usize);

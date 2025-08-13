@@ -14,6 +14,8 @@ use crate::{
     util::range_alloc::RangeAllocator,
 };
 
+use safety::safety;
+
 /// I/O memory allocator that allocates memory I/O access to device drivers.
 pub struct IoMemAllocator {
     allocators: Vec<RangeAllocator>,
@@ -40,6 +42,9 @@ impl IoMemAllocator {
     ///
     /// The caller must have ownership of the MMIO region through the `IoMemAllocator::get` interface.
     #[expect(dead_code)]
+    #[safety {
+        PostToFunc("`IoMemAllocator::get`"): "With the ownership of the MMIO region"
+    }]
     pub(in crate::io) unsafe fn recycle(&self, range: Range<usize>) {
         let allocator = find_allocator(&self.allocators, &range).unwrap();
 
@@ -108,11 +113,9 @@ impl IoMemAllocatorBuilder {
 pub static IO_MEM_ALLOCATOR: Once<IoMemAllocator> = Once::new();
 
 /// Initializes the static `IO_MEM_ALLOCATOR` based on builder.
-///
-/// # Safety
-///
-/// User must ensure all the memory I/O regions that belong to the system device have been removed by calling the
-/// `remove` function.
+#[safety {
+    Memo("All the memory that belong to the system device have been removed by calling the `remove` function."),
+}]
 pub(crate) unsafe fn init(io_mem_builder: IoMemAllocatorBuilder) {
     // SAFETY: The safety is upheld by the caller.
     IO_MEM_ALLOCATOR.call_once(|| unsafe { IoMemAllocator::new(io_mem_builder.allocators) });

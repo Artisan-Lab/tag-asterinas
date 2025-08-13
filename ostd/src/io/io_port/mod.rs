@@ -10,6 +10,8 @@ use core::{marker::PhantomData, mem::size_of};
 pub(super) use self::allocator::init;
 use crate::{prelude::*, Error};
 
+use safety::safety;
+
 /// An I/O port, representing a specific address in the I/O address of x86.
 ///
 /// The following code shows and example to read and write u32 value to an I/O port:
@@ -49,11 +51,9 @@ impl<T, A> IoPort<T, A> {
     }
 
     /// Create an I/O port.
-    ///
-    /// # Safety
-    ///
-    /// This function is marked unsafe as creating an I/O port is considered
-    /// a privileged operation.
+    #[safety {
+        Memo("This function is marked unsafe as creating an I/O port is considered a privileged operation.")
+    }]
     pub const unsafe fn new(port: u16) -> Self {
         Self {
             port,

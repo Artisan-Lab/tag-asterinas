@@ -149,7 +149,7 @@ unsafe impl PinCurrentCpu for dyn InAtomicMode + '_ {}
 
 #[safety {
     Context("BSP has booted", "APs have not booted"),
-    Memo("This function is called after the OS initializes the ACPI table."),
+    PostToFunc("`crate::arch::kernel::apic::init`")
     Unaccessed("The CPU-local objects")
 }]
 pub(crate) unsafe fn init_on_bsp() {

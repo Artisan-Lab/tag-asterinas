@@ -25,6 +25,10 @@ desc = "This function should be called only once per {scope}."
 args = [ "after", "before" ]
 desc = "This function should be executed after {after} before {before}."
 
+[tag.ContextVal]
+args = [ "val", "context" ]
+desc = "{val} should be {context} in the execution."
+
 #Value
 [tag.Eq]
 args = [ "lhs", "rhs"]
@@ -43,7 +47,7 @@ desc = "{val} should be valid for {use}."
 [tag.MutExclusive]
 args = [ "val", "action" ]
 types = [ "hazard" ]
-desc = "{action} should have exclusive access to {val}."
+desc = "{action} should have exclusive mutable access to {val}."
 
 [tag.RefHeld]
 args = [ "val" ]
@@ -56,6 +60,11 @@ desc = "The caller must not have already held a reference to {val}."
 [tag.RefForgotten]
 args = [ "val" ]
 desc = "{val} must be forgotten by [`core::mem::forget`], [`ManuallyDrop`], or [`into_raw`]."
+
+[tag.Sync]
+args = [ "val" ]
+types = [ "hazard" ]
+desc = "If the type of {val} is not [`Sync`], the caller must ensure that {val} is not accessed concurrently."
 
 #Misc
 [tag.Untracked]

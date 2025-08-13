@@ -22,6 +22,7 @@ use kernel_stack::KernelStack;
 use processor::current_task;
 use spin::Once;
 use utils::ForceSync;
+use safety::safety;
 
 pub use self::{
     preempt::{disable_preempt, halt_cpu, DisabledPreemptGuard},
@@ -292,9 +293,9 @@ impl !Send for CurrentTask {}
 impl !Sync for CurrentTask {}
 
 impl CurrentTask {
-    /// # Safety
-    ///
-    /// The caller must ensure that `task` is the current task.
+    #[safety {
+        ContextVal(task, "the current task")
+    }]
     unsafe fn new(task: NonNull<Task>) -> Self {
         Self(task)
     }

@@ -6,6 +6,8 @@ use core::{ptr::NonNull, sync::atomic::Ordering};
 use super::{context_switch, Task, TaskContext, POST_SCHEDULE_HANDLER};
 use crate::{cpu_local_cell, trap::irq::DisabledLocalIrqGuard};
 
+use safety::safety;
+
 cpu_local_cell! {
     /// The `Arc<Task>` (casted by [`Arc::into_raw`]) that is the current task.
     static CURRENT_TASK_PTR: *const Task = core::ptr::null();
@@ -108,10 +110,9 @@ fn before_switching_to(next_task: &Task, irq_guard: &DisabledLocalIrqGuard) {
 }
 
 /// Does cleanups after switching to a task.
-///
-/// # Safety
-///
-/// This function must be called only once after switching to a task.
+#[safety {
+    CallOnce("task switching")
+}]
 pub(super) unsafe fn after_switching_to() {
     // Release the previous task.
     let prev = PREVIOUS_TASK_PTR.load();

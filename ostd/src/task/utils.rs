@@ -2,6 +2,8 @@
 
 use alloc::fmt;
 
+use safety::safety;
+
 /// Always [`Sync`], but unsafe to reference the data.
 pub(super) struct ForceSync<T>(T);
 
@@ -22,11 +24,9 @@ impl<T> ForceSync<T> {
     }
 
     /// Returns a reference to the inner data.
-    ///
-    /// # Safety
-    ///
-    /// If the data type is not [`Sync`], the caller must ensure that the data is not accessed
-    /// concurrently.
+    #[safety {
+        Sync(data)
+    }]
     pub(super) unsafe fn get(&self) -> &T {
         &self.0
     }

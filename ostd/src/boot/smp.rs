@@ -16,6 +16,8 @@ use crate::{
     task::Task,
 };
 
+use safety::safety;
+
 static AP_BOOT_INFO: Once<ApBootInfo> = Once::new();
 
 const AP_BOOT_STACK_SIZE: usize = PAGE_SIZE * 64;
@@ -62,11 +64,9 @@ static HW_CPU_ID_MAP: SpinLock<BTreeMap<u32, HwCpuId>> = SpinLock::new(BTreeMap:
 /// This function should be called late in the system startup. The system must at
 /// least ensure that the scheduler, ACPI table, memory allocation, and IPI module
 /// have been initialized.
-///
-/// # Safety
-///
-/// This function can only be called in the boot context of the BSP where APs have
-/// not yet been booted.
+#[safety {
+    Context("BSP has booted", "APs have not booted")
+}]
 pub(crate) unsafe fn boot_all_aps() {
     // Mark the BSP as started.
     report_online_and_hw_cpu_id(crate::cpu::CpuId::bsp().as_usize().try_into().unwrap());

@@ -443,7 +443,7 @@ impl_frame_meta_for!(MetaPageMeta);
 /// The function returns a list of `Frame`s containing the metadata.
 #[safety {
     CallOnce(system),
-    Context("BSP is started", "any AP is started")
+    Context("BSP has booted", "APs have not booted")
 }]
 pub(crate) unsafe fn init() -> Segment<MetaPageMeta> {
     let max_paddr = {

@@ -384,7 +384,6 @@ impl<C: PageTableConfig> PageTable<C> {
         }
     }
 
-    
     #[safety {
         CallOnce(system)
     }]
@@ -441,7 +440,7 @@ impl<C: PageTableConfig> PageTable<C> {
     /// Create a new reference to the same page table.
     /// The caller must ensure that the kernel page table is not copied.
     /// This is only useful for IOMMU page tables. Think twice before using it in other cases.
-    
+
     #[safety {
         NotPostToFunc("copying the page table")
     }]
@@ -475,7 +474,7 @@ impl<C: PageTableConfig> PageTable<C> {
 /// For the software page walk, we only need to disable preemption at the beginning
 /// since the page table nodes won't be recycled in the RCU critical section.
 #[safety {
-    ValidBy("`root_paddr`", "representing a root page table"):
+    ValidBy("`root_paddr`", "representing a root page table")
 }]
 #[cfg(ktest)]
 pub(super) unsafe fn page_walk<C: PageTableConfig>(

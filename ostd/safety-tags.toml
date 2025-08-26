@@ -43,13 +43,21 @@ desc = "{val} should be valid."
 args = [ "val", "cond" ]
 desc = "{val} should be valid by {cond}."
 
-[tag.ValidUse]
-args = [ "val", "use" ]
-desc = "{val} should be valid for {use}."
+[tag.ValidFor]
+args = [ "val", "doing" ]
+desc = "{val} should be valid for {doing}."
+
+[tag.ValidAs]
+args = [ "val", "something" ]
+desc = "{val} should be valid as {something}."
+
+[tag.Safe]
+args = [ "val" ]
+desc = "{val} should be safe."
 
 #Reference
 [tag.MutExclusive]
-args = [ "val", "action" ]
+args = [ "action", "val" ]
 types = [ "hazard" ]
 desc = "{action} should have exclusive mutable access to {val}."
 
@@ -104,6 +112,10 @@ desc = "{val} should have already held the lock."
 args = [ "val", "section" ]
 types = [ "hazard" ]
 dsec = "{val} should reside in {section}."
+
+[tag.ReferTo]
+args = [ "func" ]
+desc = "This function should meet the safety requirement of {func}."
 
 [tag.Memo]
 args = [ "desc" ]

@@ -17,6 +17,9 @@ cpu_local_cell! {
 }
 
 /// Initializes interrupt handling on RISC-V.
+#[safety {
+    Unaltered("`sscratch` and `stvec`")
+}]
 pub(crate) unsafe fn init() {
     self::trap::init();
 }

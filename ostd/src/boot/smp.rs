@@ -64,8 +64,9 @@ static HW_CPU_ID_MAP: SpinLock<BTreeMap<u32, HwCpuId>> = SpinLock::new(BTreeMap:
 /// This function should be called late in the system startup. The system must at
 /// least ensure that the scheduler, ACPI table, memory allocation, and IPI module
 /// have been initialized.
+///
 #[safety {
-    Context("BSP has booted", "APs have not booted")
+    Context("BSP starts", "any AP starts")
 }]
 pub(crate) unsafe fn boot_all_aps() {
     // Mark the BSP as started.

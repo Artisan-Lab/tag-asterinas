@@ -2,12 +2,13 @@
 
 //! Interrupts.
 
-use safety::safety;
 use spin::Once;
 use x86_64::registers::rflags::{self, RFlags};
 
 use super::iommu::{alloc_irt_entry, has_interrupt_remapping, IrtEntryHandle};
 use crate::cpu::PinCurrentCpu;
+
+use safety::safety;
 
 // Intel(R) 64 and IA-32 rchitectures Software Developer's Manual,
 // Volume 3A, Section 6.2 says "Vector numbers in the range 32 to 255
@@ -116,12 +117,10 @@ impl HwCpuId {
 }
 
 /// Sends a general inter-processor interrupt (IPI) to the specified CPU.
-///
-/// # Safety
-///
-/// The caller must ensure that the interrupt number is valid and that
-/// the corresponding handler is configured correctly on the remote CPU.
-/// Furthermore, invoking the interrupt handler must also be safe.
+#[safety {
+    Valid(irq_num),
+    Safe("The remote handler"): "For invoking the corresponding handler on the remote CPU"
+}]
 pub(crate) unsafe fn send_ipi(hw_cpu_id: HwCpuId, irq_num: u8, guard: &dyn PinCurrentCpu) {
     use crate::arch::kernel::apic::{self, Icr};
 

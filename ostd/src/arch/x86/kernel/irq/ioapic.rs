@@ -15,6 +15,8 @@ use crate::{
     Result,
 };
 
+use safety::safety;
+
 cfg_if! {
     if #[cfg(feature = "cvm_guest")] {
         use crate::arch::tdx_guest;
@@ -37,9 +39,9 @@ pub(super) struct IoApic {
 impl IoApic {
     const TABLE_REG_BASE: u8 = 0x10;
 
-    /// # Safety
-    ///
-    /// The caller must ensure that the base address is a valid I/O APIC base address.
+    #[safety {
+        ValidAs(base_address, "Aa valid I/O APIC base address")
+    }]
     pub(super) unsafe fn new(
         base_address: usize,
         base_interrupt: u32,
@@ -140,9 +142,9 @@ struct IoApicAccess {
 }
 
 impl IoApicAccess {
-    /// # Safety
-    ///
-    /// The caller must ensure that the base address is a valid I/O APIC base address.
+    #[safety {
+        ValidAs(base_address, "Aa valid I/O APIC base address")
+    }]
     pub(self) unsafe fn new(base_address: usize, io_mem_builder: &IoMemAllocatorBuilder) -> Self {
         io_mem_builder.remove(base_address..(base_address + 0x20));
         if_tdx_enabled!({

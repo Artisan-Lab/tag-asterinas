@@ -16,6 +16,8 @@ use crate::{
     trap::irq::IrqLine,
 };
 
+use safety::safety;
+
 static HPET_INSTANCE: Once<Hpet> = Once::new();
 
 const OFFSET_ID_REGISTER: usize = 0x000;
@@ -45,9 +47,9 @@ struct Hpet {
 }
 
 impl Hpet {
-    /// # Safety
-    ///
-    /// The caller must ensure that the address is valid and points to the HPET MMIO region.
+    #[safety {
+        ValidAs(base_address, "the HPET MMIO region")
+    }]
     unsafe fn new(base_address: NonNull<u8>) -> Hpet {
         // SAFETY: The safety is upheld by the caller.
         let (

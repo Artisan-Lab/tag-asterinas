@@ -5,7 +5,6 @@ use core::{fmt::Debug, ptr::NonNull};
 
 use bitflags::bitflags;
 use log::{error, info};
-use safety::safety;
 use spin::Once;
 use volatile::{access::ReadWrite, VolatileRef};
 
@@ -15,6 +14,8 @@ use crate::{
     sync::{LocalIrqDisabled, SpinLock},
     trap::irq::IrqLine,
 };
+
+use safety::safety;
 
 #[derive(Debug)]
 pub struct FaultEventRegisters {
@@ -35,11 +36,10 @@ impl FaultEventRegisters {
     }
 
     /// Creates an instance from the IOMMU base address.
-    ///
-    /// # Safety
-    ///
-    /// The caller must ensure that the base address is a valid IOMMU base address and that it has
-    /// exclusive ownership of the IOMMU fault event registers.
+    #[safety {
+        ValidAs(base_register_vaddr, "a valid IOMMU base address"),
+        MutExclusive("The caller", "the IOMMU fault event registers")
+    }]
     unsafe fn new(base_register_vaddr: NonNull<u8>) -> Self {
         // SAFETY: The safety is upheld by the caller.
         let (capability, status, mut control, mut data, mut address, upper_address) = unsafe {
@@ -232,11 +232,10 @@ pub(super) static FAULT_EVENT_REGS: Once<SpinLock<FaultEventRegisters, LocalIrqD
     Once::new();
 
 /// Initializes the fault reporting function.
-///
-/// # Safety
-///
-/// The caller must ensure that the base address is a valid IOMMU base address and that it has
-/// exclusive ownership of the IOMMU fault event registers.
+#[safety {
+    ValidAs(base_register_vaddr, "a valid IOMMU base address"),
+    MutExclusive("The caller", "the IOMMU fault event registers")
+}]
 pub(super) unsafe fn init(base_register_vaddr: NonNull<u8>) {
     FAULT_EVENT_REGS
         // SAFETY: The safety is upheld by the caller.

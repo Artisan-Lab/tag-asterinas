@@ -30,6 +30,8 @@ use x86_64::{
 
 use super::RawUserContext;
 
+use safety::safety;
+
 global_asm!(
     include_str!("syscall.S"),
     USER_CS = const super::gdt::USER_CS.0,
@@ -40,6 +42,9 @@ global_asm!(
 ///
 /// The caller needs to ensure that `gdt::init` has been called before, so the segment selectors
 /// used in the `syscall` and `sysret` instructions have been properly initialized.
+#[safety {
+    PostToFunc("`gdt::init`"): "The segment selectors used in the `syscall` and `sysret` instructions should have been properly initialized."
+}]
 pub(super) unsafe fn init() {
     let cpuid = CpuId::new();
 

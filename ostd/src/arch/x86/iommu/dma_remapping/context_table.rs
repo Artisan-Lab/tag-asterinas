@@ -20,6 +20,8 @@ use crate::{
     task::disable_preempt,
 };
 
+use safety::safety;
+
 /// Bit 0 is `Present` bit, indicating whether this entry is present.
 /// Bit 63:12 is the context-table pointer pointing to this bus's context-table.
 #[derive(Pod, Clone, Copy)]
@@ -64,10 +66,9 @@ impl RootTable {
     }
 
     /// Mapping device address to physical address.
-    ///
-    /// # Safety
-    ///
-    /// User must ensure the given paddr is a valid one.
+    #[safety {
+        Valid(paddr),
+    }]
     pub(super) unsafe fn map(
         &mut self,
         device: PciDeviceLocation,
@@ -287,9 +288,9 @@ impl ContextTable {
         }
     }
 
-    /// # Safety
-    ///
-    /// User must ensure that the given physical address is valid.
+    #[safety {
+        Valid(paddr)
+    }]
     unsafe fn map(
         &mut self,
         device: PciDeviceLocation,

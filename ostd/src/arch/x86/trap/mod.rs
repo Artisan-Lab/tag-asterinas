@@ -23,7 +23,6 @@ mod syscall;
 use align_ext::AlignExt;
 use cfg_if::cfg_if;
 use log::debug;
-use safety::safety;
 use spin::Once;
 
 use super::{cpu::context::GeneralRegs, ex_table::ExTable};
@@ -42,6 +41,8 @@ use crate::{
     task::disable_preempt,
     trap::call_irq_callback_functions,
 };
+
+use safety::safety;
 
 cfg_if! {
     if #[cfg(feature = "cvm_guest")] {
@@ -117,9 +118,10 @@ pub struct TrapFrame {
 /// [TSS]: https://wiki.osdev.org/Task_State_Segment
 /// [`syscall`]: https://www.felixcloutier.com/x86/syscall
 ///
-/// # Safety
-///
-/// This method must be called only in the boot context of each available processor.
+#[safety {
+    Context("boot starts", "boot ends"),
+    CallOnce("available processor")
+}]
 pub(crate) unsafe fn init() {
     // SAFETY: We're in the boot context, so no preemption can occur.
     unsafe { gdt::init() };

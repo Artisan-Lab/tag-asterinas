@@ -197,8 +197,8 @@ pub(super) fn get_global_frame_allocator() -> &'static dyn GlobalFrameAllocator 
 
 #[safety {
     CallOnce(system),
-    PostToFunc(crate::boot::EARLY_INFO.call_once),
-    PostToFunc(init_early_allocator)
+    PostToFunc("`crate::boot::EARLY_INFO.call_once`"),
+    PostToFunc("`init_early_allocator`")
 }]
 pub(crate) unsafe fn init() {
     let regions = &crate::boot::EARLY_INFO.get().unwrap().memory_regions;

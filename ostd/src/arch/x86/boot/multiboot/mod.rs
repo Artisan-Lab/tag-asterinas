@@ -10,6 +10,8 @@ use crate::{
     mm::{kspace::paddr_to_vaddr, Paddr},
 };
 
+use safety::safety;
+
 global_asm!(include_str!("header.S"));
 
 const MULTIBOOT_ENTRY_MAGIC: u32 = 0x2BADB002;
@@ -26,6 +28,9 @@ fn parse_kernel_commandline(mb1_info: &MultibootLegacyInfo) -> Option<&str> {
     unsafe { parse_as_cstr(mb1_info.cmdline) }
 }
 
+#[safety {
+    ReferTo("`core::ffi::CStr::from_ptr`")
+}]
 unsafe fn parse_as_cstr<'a>(ptr: u32) -> Option<&'a str> {
     if ptr == 0 {
         return None;

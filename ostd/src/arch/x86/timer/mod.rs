@@ -8,7 +8,6 @@ pub(crate) mod pit;
 
 use core::sync::atomic::Ordering;
 
-use safety::safety;
 use spin::Once;
 
 use super::trap::TrapFrame;

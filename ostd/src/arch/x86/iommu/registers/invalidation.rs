@@ -11,6 +11,8 @@ use volatile::{
 
 use super::ExtendedCapability;
 
+use safety::safety;
+
 #[derive(Debug)]
 pub struct InvalidationRegisters {
     pub(super) queue_head: VolatileRef<'static, u64, ReadOnly>,
@@ -31,11 +33,10 @@ pub struct InvalidationRegisters {
 
 impl InvalidationRegisters {
     /// Creates an instance from the IOMMU base address.
-    ///
-    /// # Safety
-    ///
-    /// The caller must ensure that the base address is a valid IOMMU base address and that it has
-    /// exclusive ownership of the IOMMU invalidation registers.
+    #[safety {
+        Valid(base),
+        MutExclusive("The caller", "the IOMMU invalidation registers")
+    }]
     pub(super) unsafe fn new(base: NonNull<u8>) -> Self {
         let offset = {
             // SAFETY: The safety is upheld by the caller.

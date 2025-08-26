@@ -18,6 +18,8 @@ use crate::{
     Pod,
 };
 
+use safety::safety;
+
 mod util;
 
 pub(crate) const NR_ENTRIES_PER_PAGE: usize = 512;
@@ -119,10 +121,9 @@ pub struct PageTableEntry(usize);
 /// Activates the given level 4 page table.
 /// The cache policy of the root page table node is controlled by `root_pt_cache`.
 ///
-/// # Safety
-///
-/// Changing the level 4 page table is unsafe, because it's possible to violate memory safety by
-/// changing the page mapping.
+#[safety {
+    ValidAs(root_paddr, "a page table")
+}]
 pub unsafe fn activate_page_table(root_paddr: Paddr, root_pt_cache: CachePolicy) {
     let addr = PhysFrame::from_start_address(x86_64::PhysAddr::new(root_paddr as u64)).unwrap();
     let flags = match root_pt_cache {

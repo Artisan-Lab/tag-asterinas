@@ -13,6 +13,8 @@ use crate::{
     mm::paddr_to_vaddr,
 };
 
+use safety::safety;
+
 #[derive(Debug, Clone)]
 pub struct AcpiMemoryHandler {}
 
@@ -37,8 +39,9 @@ impl AcpiHandler for AcpiMemoryHandler {
     fn unmap_physical_region<T>(_region: &acpi::PhysicalMapping<Self, T>) {}
 }
 
-/// Safety:
-/// This function needs to be called after the OS initializes the ACPI table.
+#[safety {
+    PostToFunc("`crate::boot::EARLY_INFO.call_once`"),
+}]
 pub(crate) unsafe fn get_acpi_tables() -> Option<AcpiTables<AcpiMemoryHandler>> {
     let acpi_tables = match boot::EARLY_INFO.get().unwrap().acpi_arg {
         // Safety Discharge:

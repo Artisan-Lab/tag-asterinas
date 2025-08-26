@@ -15,11 +15,20 @@ pub(crate) mod task;
 pub mod timer;
 pub mod trap;
 
+use safety::safety;
+
 #[cfg(feature = "cvm_guest")]
 pub(crate) fn init_cvm_guest() {
     // Unimplemented, no-op
 }
 
+
+#[safety {
+    Unaltered("`sscratch` and `stvec`"), // from trap::init
+    Context("BSP starts", "any AP starts"), // from crate::boot::smp::boot_all_aps
+    CallOnce("system"), // from timer::init
+    NotPostToFunc("any other public functions of timer module"),  // from timer::init
+}]
 pub(crate) unsafe fn late_init_on_bsp() {
     // SAFETY: This function is called in the boot context of the BSP.
     unsafe { trap::init() };

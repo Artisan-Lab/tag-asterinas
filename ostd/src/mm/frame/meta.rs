@@ -325,7 +325,7 @@ impl MetaSlot {
 
     /// Gets a dynamically typed pointer to the stored metadata.
     #[safety {
-        ValDerived("The stored metadata", Self::write_meta),
+        ValDerived("The stored metadata", "`Self::write_meta`"),
         MutExclusive("The metadata slot", "mutating through the returned pointer")
     }]
     pub(super) unsafe fn dyn_meta_ptr(&self) -> *mut dyn AnyFrameMeta {
@@ -359,8 +359,8 @@ impl MetaSlot {
 
     /// Writes the metadata to the slot without reading or dropping the previous value.
     #[safety {
-        MutExclusive(self.vtable_ptr, ""),
-        MutExclusive(self.storage, "")
+        MutExclusive("The caller", self.vtable_ptr),
+        MutExclusive("The caller", self.storage)
     }]
     pub(super) unsafe fn write_meta<M: AnyFrameMeta>(&self, metadata: M) {
         const { assert!(size_of::<M>() <= FRAME_METADATA_MAX_SIZE) };
@@ -382,7 +382,7 @@ impl MetaSlot {
     /// Drops the metadata and deallocates the frame.
     #[safety {
         Eq(self.ref_count, 0),
-        ValDerived("the meta data", Self::write_meta)
+        ValDerived("The meta data", Self::write_meta)
     }]
     pub(super) unsafe fn drop_last_in_place(&self) {
         // This should be guaranteed as a safety requirement.
@@ -402,7 +402,7 @@ impl MetaSlot {
     /// metadata is undefined behavior unless it is re-initialized by [`Self::write_meta`].
     #[safety {
         Eq(self.ref_count, 0),
-        ValDerived("the meta data", Self::write_meta)
+        ValDerived("The meta data", Self::write_meta)
     }]
     pub(super) unsafe fn drop_meta_in_place(&self) {
         let paddr = self.frame_paddr();
@@ -443,7 +443,7 @@ impl_frame_meta_for!(MetaPageMeta);
 /// The function returns a list of `Frame`s containing the metadata.
 #[safety {
     CallOnce(system),
-    Context("BSP has booted", "APs have not booted")
+    Context("BSP starts", "any AP starts")
 }]
 pub(crate) unsafe fn init() -> Segment<MetaPageMeta> {
     let max_paddr = {

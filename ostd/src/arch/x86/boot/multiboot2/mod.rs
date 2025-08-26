@@ -12,6 +12,8 @@ use crate::{
     mm::{kspace::paddr_to_vaddr, Paddr},
 };
 
+use safety::safety;
+
 global_asm!(include_str!("header.S"));
 
 fn parse_bootloader_name(mb2_info: &BootInformation) -> Option<&'static str> {
@@ -28,6 +30,9 @@ fn parse_kernel_commandline(mb2_info: &BootInformation) -> Option<&'static str> 
     Some(unsafe { make_str_vaddr_static(cmdline) })
 }
 
+#[safety {
+    ReferTo("`core::str::from_utf8`")
+}]
 unsafe fn make_str_vaddr_static(str: &str) -> &'static str {
     let vaddr = paddr_to_vaddr(str.as_ptr() as Paddr);
 

@@ -63,6 +63,8 @@ pub use ostd_pod::Pod;
 
 pub use self::{error::Error, prelude::Result};
 
+use safety::safety;
+
 /// Initializes OSTD.
 ///
 /// This function represents the first phase booting up the system. It makes
@@ -76,6 +78,10 @@ pub use self::{error::Error, prelude::Result};
 // make inter-initialization-dependencies more clear and reduce usages of
 // boot stage only global variables.
 #[doc(hidden)]
+#[safety {
+    CallOnce(system),
+    Context("BSP starts", "BSP ends")
+}]
 unsafe fn init() {
     arch::enable_cpu_features();
 

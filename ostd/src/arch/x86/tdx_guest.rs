@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 
 use log::warn;
-use safety::safety;
 use tdx_guest::{tdcall::accept_page, tdvmcall::map_gpa, TdxTrapFrame};
 
 use super::trap::TrapFrame;
@@ -15,6 +14,8 @@ use crate::{
     },
     prelude::Paddr,
 };
+
+use safety::safety;
 
 const SHARED_BIT: u8 = 51;
 const SHARED_MASK: u64 = 1u64 << SHARED_BIT;

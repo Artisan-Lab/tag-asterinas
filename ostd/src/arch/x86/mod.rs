@@ -29,6 +29,8 @@ use core::sync::atomic::Ordering;
 
 use log::warn;
 
+use safety::safety;
+
 #[cfg(feature = "cvm_guest")]
 pub(crate) fn init_cvm_guest() {
     match ::tdx_guest::init_tdx() {
@@ -55,11 +57,11 @@ static CPU_FEATURES: Once<FeatureInfo> = Once::new();
 /// Architecture-specific initialization on the bootstrapping processor.
 ///
 /// It should be called when the heap and frame allocators are available.
-///
-/// # Safety
-///
-/// 1. This function must be called only once
-/// 2. This function must be called in the boot context of the bootstrapping processor.
+
+#[safety {
+    CallOnce(system),
+    Context("boot starts", "boot ends")
+}]
 pub(crate) unsafe fn late_init_on_bsp() {
     // SAFETY: This function is only called once on BSP.
     unsafe { trap::init() };
@@ -98,6 +100,10 @@ pub(crate) unsafe fn late_init_on_bsp() {
 /// And it should be called after the BSP's call to [`init_on_bsp`].
 ///
 /// [`init_on_bsp`]: crate::cpu::init_on_bsp
+#[safety {
+    CallOnce("application processor"),
+    PostToFunc("`init_on_bsp`")
+}]
 pub(crate) unsafe fn init_on_ap() {
     timer::init_ap();
 }

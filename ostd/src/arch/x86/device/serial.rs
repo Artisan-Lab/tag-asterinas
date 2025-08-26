@@ -8,6 +8,8 @@ use crate::{
     arch::device::io_port::{ReadWriteAccess, WriteOnlyAccess},
     io::IoPort,
 };
+
+use safety::safety;
 /// A serial port.
 ///
 /// Serial ports are a legacy communications port common on IBM-PC compatible computers.
@@ -31,11 +33,10 @@ pub struct SerialPort {
 
 impl SerialPort {
     /// Creates a serial port.
-    ///
-    /// # Safety
-    ///
-    /// The caller must ensure that the base port is a valid serial base port and that it has
-    /// exclusive ownership of the serial ports.
+    #[safety {
+        ValidAs(port, "a serial base port"),
+        MutExclusive("The caller", "the serial ports")
+    }]
     pub const unsafe fn new(port: u16) -> Self {
         // SAFETY: The safety is upheld by the caller.
         unsafe {

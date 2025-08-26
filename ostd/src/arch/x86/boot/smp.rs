@@ -48,9 +48,12 @@ use crate::{
     task::disable_preempt,
 };
 
+use safety::safety;
+
 /// Counts the number of processors.
-/// Safety:
-/// This function needs to be called after the OS initializes the ACPI table.
+#[safety {
+    PostToFunc("`crate::boot::EARLY_INFO.call_once`"),
+}]
 pub(crate) unsafe fn count_processors() -> Option<u32> {
     let acpi_tables = unsafe { get_acpi_tables()? };
     let madt_table = acpi_tables.find_table::<acpi::madt::Madt>().ok()?;
@@ -114,6 +117,12 @@ pub(crate) unsafe fn count_processors() -> Option<u32> {
 /// 1. we're in the boot context of the BSP,
 /// 2. all APs have not yet been booted, and
 /// 3. the arguments are valid to boot APs.
+#[safety {
+    Context("BSP starts", "any AP starts"),
+    ValidFor("`AP_BOOT_START_PA`", "writing AP boot code"), // from copy_ap_boot_code
+    ValidFor(info_ptr, "writing"), // from fill_boot_info_ptr
+    ValidFor(pt_ptr, "writing"), // from fill_boot_pt_ptr
+}]
 pub(crate) unsafe fn bringup_all_aps(info_ptr: *const PerApRawInfo, pt_ptr: Paddr, num_cpus: u32) {
     // SAFETY: The code and data to boot AP is valid to write because
     // there are no readers and we are the only writer at this point.
@@ -148,9 +157,9 @@ pub(super) fn reclaimable_memory_region() -> MemoryRegion {
     )
 }
 
-/// # Safety
-///
-/// The caller must ensure the memory region to be filled with AP boot code is valid to write.
+#[safety {
+    ValidFor("`AP_BOOT_START_PA`", "writing AP boot code")
+}]
 unsafe fn copy_ap_boot_code() {
     let ap_boot_start = __ap_boot_start as usize as *const u8;
     let len = __ap_boot_end as usize - __ap_boot_start as usize;
@@ -170,9 +179,9 @@ unsafe fn copy_ap_boot_code() {
     }
 }
 
-/// # Safety
-///
-/// The caller must ensure the pointer to be filled is valid to write.
+#[safety {
+    ValidFor(info_ptr, "writing")
+}]
 unsafe fn fill_boot_info_ptr(info_ptr: *const PerApRawInfo) {
     extern "C" {
         static mut __ap_boot_info_array_pointer: *const PerApRawInfo;
@@ -184,9 +193,9 @@ unsafe fn fill_boot_info_ptr(info_ptr: *const PerApRawInfo) {
     }
 }
 
-/// # Safety
-///
-/// The caller must ensure the pointer to be filled is valid to write.
+#[safety {
+    ValidFor(pt_ptr, "writing")
+}]
 unsafe fn fill_boot_pt_ptr(pt_ptr: Paddr) {
     extern "C" {
         static mut __boot_page_table_pointer: u32;
@@ -208,9 +217,12 @@ extern "C" {
 
 /// Wakes up all application processors via the ACPI multiprocessor mailbox structure.
 ///
-/// # Safety
-///
-/// The safety preconditions are the same as [`send_boot_ipis`].
+#[safety {
+    Context("BSP starts", "any AP starts"),
+    PostToFunc("`copy_ap_boot_code`"),
+    PostToFunc("`fill_boot_info_ptr`"),
+    PostToFunc("`fill_boot_pt_ptr`"): "We've properly prepared all the resources for the application processors to boot successfully"
+}]
 #[cfg(feature = "cvm_guest")]
 unsafe fn wake_up_aps_via_mailbox(num_cpus: u32) {
     use acpi::platform::wakeup_aps;
@@ -246,15 +258,12 @@ unsafe fn wake_up_aps_via_mailbox(num_cpus: u32) {
 /// started successfully one by one will bring extra overhead). For
 /// APs that have been started, this signal will not bring any cost.
 ///
-/// # Safety
-///
-/// The caller must ensure that all application processors can be
-/// safely booted by ensuring that:
-/// 1. We're in the boot context of the BSP and all APs have not yet
-///    been booted.
-/// 2. We've properly prepared all the resources for the application
-///    processors to boot successfully (e.g., each AP's page table
-///    and stack).
+#[safety {
+    Context("BSP starts", "any AP starts"),
+    PostToFunc("`copy_ap_boot_code`"),
+    PostToFunc("`fill_boot_info_ptr`"),
+    PostToFunc("`fill_boot_pt_ptr`"): "We've properly prepared all the resources for the application processors to boot successfully"
+}]
 unsafe fn send_boot_ipis() {
     let preempt_guard = disable_preempt();
     let apic = apic::get_or_init(&preempt_guard as _);
@@ -276,9 +285,9 @@ unsafe fn send_boot_ipis() {
     }
 }
 
-/// # Safety
-///
-/// The caller should ensure it's valid to send STARTUP IPIs to all CPUs excluding self.
+#[safety {
+    Valid("Sending STARTUP IPIs to all CPUs excluding self")
+}]
 unsafe fn send_startup_to_all_aps(apic: &dyn Apic) {
     let icr = Icr::new(
         ApicId::from(0),
@@ -294,9 +303,9 @@ unsafe fn send_startup_to_all_aps(apic: &dyn Apic) {
     unsafe { apic.send_ipi(icr) }
 }
 
-/// # Safety
-///
-/// The caller should ensure it's valid to send INIT IPIs to all CPUs excluding self.
+#[safety {
+    Valid("Sending INIT IPIs to all CPUs excluding self")
+}]
 unsafe fn send_init_to_all_aps(apic: &dyn Apic) {
     let icr = Icr::new(
         ApicId::from(0),
@@ -312,9 +321,9 @@ unsafe fn send_init_to_all_aps(apic: &dyn Apic) {
     unsafe { apic.send_ipi(icr) };
 }
 
-/// # Safety
-///
-/// The caller should ensure it's valid to deassert INIT IPIs for all CPUs excluding self.
+#[safety {
+    Valid("Deasserting INIT IPIs for all CPUs excluding self")
+}]
 unsafe fn send_init_deassert(apic: &dyn Apic) {
     let icr = Icr::new(
         ApicId::from(0),

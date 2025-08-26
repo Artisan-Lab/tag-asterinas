@@ -5,7 +5,6 @@
 use core::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use log::info;
-use safety::safety;
 use x86::cpuid::cpuid;
 
 use crate::{

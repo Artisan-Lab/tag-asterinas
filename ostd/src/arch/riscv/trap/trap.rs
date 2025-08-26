@@ -18,6 +18,8 @@ use core::arch::{asm, global_asm};
 
 use crate::arch::cpu::context::GeneralRegs;
 
+use safety::safety;
+
 #[cfg(target_arch = "riscv32")]
 global_asm!(
     r"
@@ -47,13 +49,13 @@ global_asm!(include_str!("trap.S"));
 
 /// Initialize interrupt handling for the current HART.
 ///
-/// # Safety
-///
 /// This function will:
 /// - Set `sscratch` to 0.
 /// - Set `stvec` to internal exception vector.
 ///
-/// You **MUST NOT** modify these registers later.
+#[safety {
+    Unaltered("`sscratch` and `stvec`")
+}]
 pub unsafe fn init() {
     // Set sscratch register to 0, indicating to exception vector that we are
     // presently executing in the kernel

@@ -8,6 +8,8 @@ use xapic::get_xapic_base_address;
 
 use crate::{cpu::PinCurrentCpu, cpu_local, io::IoMemAllocatorBuilder};
 
+use safety::safety;
+
 mod x2apic;
 mod xapic;
 
@@ -49,6 +51,9 @@ pub fn get_or_init(_guard: &dyn PinCurrentCpu) -> &(dyn Apic + 'static) {
         /// # Safety
         ///
         /// The caller must ensure that its context allows for safe access to `&T`.
+        #[safety {
+            Safe("The access to `&T`")
+        }]
         unsafe fn get(&self) -> &T {
             &self.0
         }

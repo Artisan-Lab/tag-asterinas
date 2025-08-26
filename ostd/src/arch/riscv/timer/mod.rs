@@ -14,6 +14,8 @@ use crate::{
     trap,
 };
 
+use safety::safety;
+
 /// The timer frequency (Hz). Here we choose 1000Hz since 1000Hz is easier for
 /// unit conversion and convenient for timer. What's more, the frequency cannot
 /// be set too high or too low, 1000Hz is a modest choice.
@@ -27,11 +29,11 @@ static TIMER_INTERVAL: AtomicU64 = AtomicU64::new(0);
 
 /// Initializes the timer module.
 ///
-/// # Safety
-///
-/// This function is safe to call on the following conditions:
-/// 1. It is called once and at most once at a proper timing in the boot context.
-/// 2. It is called before any other public functions of this module is called.
+#[safety {
+    Context("boot starts", "boot ends"),
+    CallOnce("system"),
+    NotPostToFunc("any other public functions of timer module"),
+}]
 pub(super) unsafe fn init() {
     TIMEBASE_FREQ.store(
         DEVICE_TREE

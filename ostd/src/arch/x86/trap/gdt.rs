@@ -20,16 +20,17 @@ use x86_64::{
 
 use crate::cpu::local::{CpuLocal, StaticCpuLocal};
 
+use safety::safety;
+
 /// Initializes and loads the GDT and TSS.
 ///
 /// The caller should only call this method once in the boot context for each available processor.
 /// This is not a safety requirement, however, because calling this method again will do nothing
 /// more than load the GDT and TSS with the same contents.
 ///
-/// # Safety
-///
-/// The caller must ensure that no preemption can occur during the method, otherwise we may
-/// accidentally load a wrong GDT and TSS that actually belongs to another CPU.
+#[safety {
+    Memo("The caller must ensure that no preemption can occur during the method, otherwise we may accidentally load a wrong GDT and TSS that actually belongs to another CPU.")
+}]
 pub(super) unsafe fn init() {
     let tss_ptr = LOCAL_TSS.as_ptr();
 

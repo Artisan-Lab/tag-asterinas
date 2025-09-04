@@ -302,9 +302,9 @@ impl MetaSlot {
         }
     }
 
-    /// Increases the frame reference count by one.
     #[safety {
-        RefHeld("the frame"): "For a frame derived from Self"
+        Ge(self.ref_count, 1),
+        Ne(self.ref_count, REF_COUNT_UNUSED) : "Increases the frame reference count by one"
     }]
     pub(super) unsafe fn inc_ref_count(&self) {
         let last_ref_cnt = self.ref_count.fetch_add(1, Ordering::Relaxed);
@@ -325,9 +325,11 @@ impl MetaSlot {
 
     /// Gets a dynamically typed pointer to the stored metadata.
     #[safety {
-        ValDerived("The stored metadata", "`Self::write_meta`"),
-        MutExclusive("The metadata slot", "mutating through the returned pointer")
+        PostToFunc("`Self::write_meta`"),
+        Valid(self.storage)
     }]
+    /// The returned pointer should not be dereferenced as mutable unless having
+    /// exclusive access to the metadata slot.
     pub(super) unsafe fn dyn_meta_ptr(&self) -> *mut dyn AnyFrameMeta {
         // SAFETY: The page metadata is valid to be borrowed immutably, since
         // it will never be borrowed mutably after initialization.
@@ -351,16 +353,14 @@ impl MetaSlot {
     ///  - the initialized metadata is of type `M`;
     ///  - the returned pointer should not be dereferenced as mutable unless
     ///    having exclusive access to the metadata slot.
-    //#[safety::postcond::PriorToFunc(MetaSlot::write_meta::<M>)]
-    //#[safety::postcond::MutExclusive(RETURN_VALUE)]
     pub(super) fn as_meta_ptr<M: AnyFrameMeta>(&self) -> *mut M {
         self.storage.get() as *mut M
     }
 
     /// Writes the metadata to the slot without reading or dropping the previous value.
     #[safety {
-        MutExclusive("The caller", self.vtable_ptr),
-        MutExclusive("The caller", self.storage)
+        MutAccess(self.vtable_ptr),
+        MutAccess(self.storage)
     }]
     pub(super) unsafe fn write_meta<M: AnyFrameMeta>(&self, metadata: M) {
         const { assert!(size_of::<M>() <= FRAME_METADATA_MAX_SIZE) };
@@ -382,7 +382,7 @@ impl MetaSlot {
     /// Drops the metadata and deallocates the frame.
     #[safety {
         Eq(self.ref_count, 0),
-        ValDerived("The meta data", Self::write_meta)
+        ValidBy("The meta data", "initializing with `Self::write_meta`")
     }]
     pub(super) unsafe fn drop_last_in_place(&self) {
         // This should be guaranteed as a safety requirement.
@@ -402,7 +402,7 @@ impl MetaSlot {
     /// metadata is undefined behavior unless it is re-initialized by [`Self::write_meta`].
     #[safety {
         Eq(self.ref_count, 0),
-        ValDerived("The meta data", Self::write_meta)
+        ValidBy("The meta data", "initializing with `Self::write_meta`")
     }]
     pub(super) unsafe fn drop_meta_in_place(&self) {
         let paddr = self.frame_paddr();

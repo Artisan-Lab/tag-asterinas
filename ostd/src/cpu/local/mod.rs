@@ -193,7 +193,7 @@ static CPU_LOCAL_STORAGES: Once<&'static [Paddr]> = Once::new();
 #[safety {
     Context("BSP has booted", "APs have not booted"),
     Unaccessed("The CPU-local data"),
-    ContextVal(num_cpus, "the number of CPUs")
+    ValidAs(num_cpus, "the number of CPUs")
 }]
 pub(crate) unsafe fn copy_bsp_for_ap(num_cpus: usize) {
     let num_aps = num_cpus - 1; // BSP does not need allocated storage.

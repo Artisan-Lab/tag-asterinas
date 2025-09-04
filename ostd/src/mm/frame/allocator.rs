@@ -358,7 +358,7 @@ pub(crate) fn early_alloc(layout: Layout) -> Option<Paddr> {
 
 #[safety {
     CallOnce(system),
-    PostToFunc(crate::boot::EARLY_INFO.call_once)
+    PostToFunc("`crate::boot::EARLY_INFO.call_once`")
 }]
 pub(crate) unsafe fn init_early_allocator() {
     let mut early_allocator = EARLY_ALLOCATOR.lock();

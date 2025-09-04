@@ -52,7 +52,7 @@ pub fn get_or_init(_guard: &dyn PinCurrentCpu) -> &(dyn Apic + 'static) {
         ///
         /// The caller must ensure that its context allows for safe access to `&T`.
         #[safety {
-            Safe("The access to `&T`")
+            ValidFor("`&T`", "access")
         }]
         unsafe fn get(&self) -> &T {
             &self.0

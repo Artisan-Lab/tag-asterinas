@@ -35,7 +35,7 @@ impl SerialPort {
     /// Creates a serial port.
     #[safety {
         ValidAs(port, "a serial base port"),
-        MutExclusive("The caller", "the serial ports")
+        MutAccess("the serial ports")
     }]
     pub const unsafe fn new(port: u16) -> Self {
         // SAFETY: The safety is upheld by the caller.

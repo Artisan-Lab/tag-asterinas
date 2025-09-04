@@ -251,7 +251,7 @@ unsafe fn dfs_release_lock<'rcu, C: PageTableConfig>(
     NotPostToFunc("[`locking::unlock_range`]"),
     NotPostToFunc(dfs_mark_stray_and_unlock),
     NotPostToFunc(dfs_release_lock),
-    RefForgotten(sub_tree) : "For sub_tree:"
+    RefForgotten(sub_tree) : "For sub_tree"
 }]
 pub(super) unsafe fn dfs_mark_stray_and_unlock<C: PageTableConfig>(
     rcu_guard: &dyn InAtomicMode,

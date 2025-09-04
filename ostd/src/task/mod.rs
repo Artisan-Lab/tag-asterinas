@@ -294,7 +294,7 @@ impl !Sync for CurrentTask {}
 
 impl CurrentTask {
     #[safety {
-        ContextVal(task, "the current task")
+        ValidAs(task, "the current task")
     }]
     unsafe fn new(task: NonNull<Task>) -> Self {
         Self(task)

@@ -38,7 +38,7 @@ impl FaultEventRegisters {
     /// Creates an instance from the IOMMU base address.
     #[safety {
         ValidAs(base_register_vaddr, "a valid IOMMU base address"),
-        MutExclusive("The caller", "the IOMMU fault event registers")
+        MutAccess("the IOMMU fault event registers")
     }]
     unsafe fn new(base_register_vaddr: NonNull<u8>) -> Self {
         // SAFETY: The safety is upheld by the caller.
@@ -234,7 +234,7 @@ pub(super) static FAULT_EVENT_REGS: Once<SpinLock<FaultEventRegisters, LocalIrqD
 /// Initializes the fault reporting function.
 #[safety {
     ValidAs(base_register_vaddr, "a valid IOMMU base address"),
-    MutExclusive("The caller", "the IOMMU fault event registers")
+    MutAccess("the IOMMU fault event registers")
 }]
 pub(super) unsafe fn init(base_register_vaddr: NonNull<u8>) {
     FAULT_EVENT_REGS

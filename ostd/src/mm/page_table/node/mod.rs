@@ -168,7 +168,7 @@ impl<'a, C: PageTableConfig> PageTableNodeRef<'a, C> {
 
     /// Creates a new [`PageTableGuard`] without checking if the page table lock is held.
     #[safety {
-        LockHeld("The task"),
+        LockHeld("The task")
     }]
     /// Calling this function when a guard is already created is undefined behavior
     /// unless that guard was already forgotten.

@@ -129,7 +129,7 @@ impl KVirtArea {
     ///  - the provided physical range contains tracked physical addresses.
 
     #[safety {
-        Untracked("The physical addresses within pa_range")
+        ValidBy("The physical addresses within pa_range", "being untracked")
     }]
     pub unsafe fn map_untracked_frames(
         area_size: usize,

@@ -78,7 +78,7 @@ impl<T> CpuLocal<T, DynamicStorage<T>> {
     /// Please do not call this function directly. Instead, use
     /// `DynCpuLocalChunk::alloc`.
     #[safety {
-        ValDerived("The return value", "an existing [`DynCpuLocalChunk`]"),
+        ValidBy("The return value", "deriving from an existing [`DynCpuLocalChunk`]"),
         ValidBy("The return value", "not overlapping with any existing CPU-local object")
     }]
     unsafe fn __new_dynamic(ptr: *mut T, init_values: &mut impl FnMut(CpuId) -> T) -> Self {

@@ -11,11 +11,8 @@ desc = "This function should not be executed after {func}."
 
 [tag.NotPriorToFunc]
 args = [ "func" ]
+types = [ "hazard" ]
 desc = "This function should not be executed before {func}."
-
-[tag.ValDerived]
-args = [ "val", "func" ]
-desc = "{val} should be validly derived from {func}."
 
 [tag.CallOnce]
 args = [ "scope" ] #scope ∈ {system, core}
@@ -25,14 +22,18 @@ desc = "This function should be called only once per {scope}."
 args = [ "after", "before" ]
 desc = "This function should be executed after {after} before {before}."
 
-[tag.ContextVal]
-args = [ "val", "context" ]
-desc = "{val} should be {context} in the execution."
-
 #Value
 [tag.Eq]
 args = [ "lhs", "rhs"]
-desc = "{lhs} should equal to {rhs}."
+desc = "{lhs} should be equal to {rhs}."
+
+[tag.Ne]
+args = [ "lhs", "rhs"]
+desc = "{lhs} should not be equal to {rhs}."
+
+[tag.Ge]
+args = [ "lhs", "rhs" ]
+desc = "{lhs} should be greater than or equal to {rhs}."
 
 #Valid
 [tag.Valid]
@@ -51,45 +52,39 @@ desc = "{val} should be valid for {doing}."
 args = [ "val", "something" ]
 desc = "{val} should be valid as {something}."
 
-[tag.Safe]
-args = [ "val" ]
-desc = "{val} should be safe."
-
 #Reference
-[tag.MutExclusive]
-args = [ "action", "val" ]
-types = [ "hazard" ]
-desc = "{action} should have exclusive mutable access to {val}."
-
 [tag.RefHeld]
 args = [ "val" ]
 desc = "The caller must have already held a reference to {val}."
 
 [tag.RefUnheld]
 args = [ "val" ]
-desc = "The caller must not have already held a reference to {val}."
+desc = "The caller must not hold the reference to {val}."
 
 [tag.RefForgotten]
 args = [ "val" ]
 desc = "{val} must be forgotten by [`core::mem::forget`], [`ManuallyDrop`], or [`into_raw`]."
 
-[tag.Sync]
-args = [ "val" ]
-types = [ "hazard" ]
-desc = "If the type of {val} is not [`Sync`], the caller must ensure that {val} is not accessed concurrently."
-
-#Misc
-[tag.Untracked]
-args = [ "val" ]
-desc = "{val} should be untracked."
-
+#Memory
 [tag.UserSpace]
 args = [ "start", "end" ]
 desc = "{start}..{end} should be within user space."
 
 [tag.KernelMemorySafe]
 args = [ "val" ]
-desc = "{val} does not affect kernel's memory safety."
+types = [ "hazard" ]
+desc = "{val} should not affect kernel's memory safety."
+
+[tag.Section]
+args = [ "val", "section" ]
+types = [ "hazard" ]
+dsec = "{val} should reside in {section}."
+
+#Misc
+[tag.MutAccess]
+args = [ "val" ]
+types = [ "hazard" ]
+desc = "The caller should have exclusive mutable access to {val}."
 
 [tag.Unaltered]
 args = [ "val" ]
@@ -108,14 +103,14 @@ desc = "{val} should be bounded by {bound}."
 args = [ "val" ]
 desc = "{val} should have already held the lock."
 
-[tag.Section]
-args = [ "val", "section" ]
-types = [ "hazard" ]
-dsec = "{val} should reside in {section}."
-
 [tag.ReferTo]
 args = [ "func" ]
 desc = "This function should meet the safety requirement of {func}."
+
+[tag.Sync]
+args = [ "val" ]
+types = [ "hazard" ]
+desc = "If the type of {val} is not [`Sync`], the caller must ensure that {val} is not accessed concurrently."
 
 [tag.Memo]
 args = [ "desc" ]

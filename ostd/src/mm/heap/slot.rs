@@ -60,7 +60,7 @@ impl SlotInfo {
 impl HeapSlot {
     /// Creates a new pointer to a heap slot.
     #[safety {
-        ValidBy("The slot", "being either a free slot in a [`super::Slab`] or [`Segment`] with corresponding size")
+        ValidInstance("addr", "free slot in a [`super::Slab`] or [`Segment`] with corresponding size")
     }]
     pub(super) unsafe fn new(addr: NonNull<u8>, info: SlotInfo) -> Self {
         Self { addr, info }

@@ -22,6 +22,11 @@ desc = "This function should be called only once per {scope}."
 args = [ "after", "before" ]
 desc = "This function should be executed after {after} before {before}."
 
+# Data Dependency
+[tag.OriginateFrom]
+args = [ "val", "func" ]
+desc = "{val} should originate from {func}."
+
 #Value
 [tag.Eq]
 args = [ "lhs", "rhs"]
@@ -48,9 +53,13 @@ desc = "{val} should be valid by {cond}."
 args = [ "val", "doing" ]
 desc = "{val} should be valid for {doing}."
 
-[tag.ValidAs]
+[tag.ValidAddr]
 args = [ "val", "something" ]
-desc = "{val} should be valid as {something}."
+desc = "{val} should be a valid address of {something}."
+
+[tag.ValidInstance]
+args = [ "val", "something" ]
+desc = "{val} should be a valid instance of {something}."
 
 #Reference
 [tag.RefHeld]

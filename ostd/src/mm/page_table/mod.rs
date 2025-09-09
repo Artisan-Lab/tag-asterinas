@@ -114,7 +114,7 @@ pub(crate) unsafe trait PageTableConfig:
     /// physical address is within the range of one item, after splitting/
     /// coalescing, there should be exactly one item that contains the address.
     #[safety {
-        ValidBy("`paddr` and `level`", "representing a page table node")
+        ValidInstance("`paddr` and `level`", "page table node")
     }]
     #[safety {
         Memo("Either the ownership of the item is properly transferred to the return value, or the return value is wrapped in a [`core::mem::ManuallyDrop`] that won't outlive the original item")
@@ -474,7 +474,7 @@ impl<C: PageTableConfig> PageTable<C> {
 /// For the software page walk, we only need to disable preemption at the beginning
 /// since the page table nodes won't be recycled in the RCU critical section.
 #[safety {
-    ValidBy("`root_paddr`", "representing a root page table")
+    ValidInstance("`root_paddr`", "root page table")
 }]
 #[cfg(ktest)]
 pub(super) unsafe fn page_walk<C: PageTableConfig>(

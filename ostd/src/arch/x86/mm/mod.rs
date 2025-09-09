@@ -122,7 +122,7 @@ pub struct PageTableEntry(usize);
 /// The cache policy of the root page table node is controlled by `root_pt_cache`.
 ///
 #[safety {
-    ValidAs(root_paddr, "a page table")
+    ValidInstance(root_paddr, "page table")
 }]
 pub unsafe fn activate_page_table(root_paddr: Paddr, root_pt_cache: CachePolicy) {
     let addr = PhysFrame::from_start_address(x86_64::PhysAddr::new(root_paddr as u64)).unwrap();

@@ -58,8 +58,8 @@ pub(super) static IO_PORT_ALLOCATOR: Once<IoPortAllocator> = Once::new();
 
 /// Initializes the static `IO_PORT_ALLOCATOR` and removes the system device I/O port regions.
 #[safety {
-    ValidBy("All the port I/O regions", "using the macros `sensitive_io_port` and `reserve_io_port_range`"),
-    ValidBy("`crate::arch::io::MAX_IO_PORT`", "not to exceeding the maximum value specified by architecture")
+    OriginateFrom("All the port I/O regions", "the macros `sensitive_io_port` and `reserve_io_port_range`"),
+    Bounded("`crate::arch::io::MAX_IO_PORT`", "the maximum value specified by architecture")
 }]
 pub(crate) unsafe fn init() {
     // SAFETY: `MAX_IO_PORT` is guaranteed not to exceed the maximum value specified by architecture.

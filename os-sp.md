@@ -27,4 +27,3 @@
 |VI.5|LockHeld(val)|lock held|Precond||
 |VI.6|ReferTo(func)|same SP as `func`|Precond||
 |VI.7|Sync(condition)|TBD|Precond||
-

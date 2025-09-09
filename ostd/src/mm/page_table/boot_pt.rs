@@ -74,7 +74,7 @@ where
 ///    of another page table and before this dismissal.
 
 #[safety {
-    CallOnce(cpu)
+    CallOnce(processor)
 }]
 #[safety {
     NotPostToFunc("`with_borrow`"): "After another page table has been activated"

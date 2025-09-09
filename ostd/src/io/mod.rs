@@ -41,8 +41,8 @@ cfg_if!(
 
 #[safety {
     Memo("All the memory that belong to the system device have been removed by calling the `remove` function."),
-    ValidBy("All the port I/O regions", "using the macros `sensitive_io_port` and `reserve_io_port_range`"),
-    ValidBy("`crate::arch::io::MAX_IO_PORT`", "not exceeding the maximum value specified by architecture")
+    OriginateFrom("All the port I/O regions", "the macros `sensitive_io_port` and `reserve_io_port_range`"),
+    Bounded("`crate::arch::io::MAX_IO_PORT`", "the maximum value specified by architecture")
 }]
 pub(crate) unsafe fn init(io_mem_builder: IoMemAllocatorBuilder) {
     // SAFETY: The safety is upheld by the caller.

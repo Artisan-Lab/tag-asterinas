@@ -96,7 +96,7 @@ pub struct PageTableEntry(usize);
 /// so `_root_pt_cache` is ignored.
 ///
 #[safety {
-    ValidAs(root_paddr, "a page table")
+    ValidInstance(root_paddr, "page table")
 }]
 pub unsafe fn activate_page_table(root_paddr: Paddr, _root_pt_cache: CachePolicy) {
     assert!(root_paddr % PagingConsts::BASE_PAGE_SIZE == 0);

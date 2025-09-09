@@ -34,7 +34,7 @@ pub struct SerialPort {
 impl SerialPort {
     /// Creates a serial port.
     #[safety {
-        ValidAs(port, "a serial base port"),
+        Valid(port),
         MutAccess("the serial ports")
     }]
     pub const unsafe fn new(port: u16) -> Self {

@@ -382,7 +382,7 @@ impl MetaSlot {
     /// Drops the metadata and deallocates the frame.
     #[safety {
         Eq(self.ref_count, 0),
-        ValidBy("The meta data", "initializing with `Self::write_meta`")
+        OriginateFrom("The meta data", "`Self::write_meta`")
     }]
     pub(super) unsafe fn drop_last_in_place(&self) {
         // This should be guaranteed as a safety requirement.
@@ -402,7 +402,7 @@ impl MetaSlot {
     /// metadata is undefined behavior unless it is re-initialized by [`Self::write_meta`].
     #[safety {
         Eq(self.ref_count, 0),
-        ValidBy("The meta data", "initializing with `Self::write_meta`")
+        OriginateFrom("The meta data", "`Self::write_meta`")
     }]
     pub(super) unsafe fn drop_meta_in_place(&self) {
         let paddr = self.frame_paddr();

@@ -48,7 +48,7 @@ struct Hpet {
 
 impl Hpet {
     #[safety {
-        ValidAs(base_address, "the HPET MMIO region")
+        ValidAddr(base_address, "HPET MMIO region")
     }]
     unsafe fn new(base_address: NonNull<u8>) -> Hpet {
         // SAFETY: The safety is upheld by the caller.

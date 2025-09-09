@@ -66,7 +66,7 @@ static mut NUM_CPUS: u32 = 1;
 /// Initializes the number of CPUs.
 #[safety {
     Context("BSP has booted", "APs have not booted"),
-    ValidAs(num_cpus, "the number of CPUs")
+    Valid(num_cpus)
 }]
 unsafe fn init_num_cpus(num_cpus: u32) {
     assert!(num_cpus >= 1);
@@ -170,7 +170,7 @@ pub(crate) unsafe fn init_on_bsp() {
 
 #[safety {
     Context("BSP has booted", "APs have not booted"),
-    ValidAs(cpu_id, "the CPU ID of the AP")
+    Valid(cpu_id)
 }]
 pub(crate) unsafe fn init_on_ap(cpu_id: u32) {
     // SAFETY: The safety is upheld by the caller.

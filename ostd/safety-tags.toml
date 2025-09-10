@@ -45,10 +45,6 @@ desc = "{lhs} should be greater than or equal to {rhs}."
 args = [ "val" ]
 desc = "{val} should be valid."
 
-[tag.ValidBy]
-args = [ "val", "cond" ]
-desc = "{val} should be valid by {cond}."
-
 [tag.ValidFor]
 args = [ "val", "doing" ]
 desc = "{val} should be valid for {doing}."

@@ -325,7 +325,7 @@ impl MetaSlot {
 
     /// Gets a dynamically typed pointer to the stored metadata.
     #[safety {
-        PostToFunc("`Self::write_meta`"),
+        OriginateFrom("The matadata", "[`Self::write_meta`]"),
         Valid(self.storage)
     }]
     /// The returned pointer should not be dereferenced as mutable unless having

@@ -311,8 +311,8 @@ impl TryFrom<Frame<dyn AnyFrameMeta>> for UFrame {
 
 /// Increases the reference count of the frame by one.
 #[safety {
-    Valid("The frame"),
-    RefHeld("The frame") : "For a frame derived from paddr"
+    ValidInstance(paddr, "frame"),
+    RefHeld("The frame")
 }]
 pub(in crate::mm) unsafe fn inc_frame_ref_count(paddr: Paddr) {
     debug_assert!(paddr % PAGE_SIZE == 0);

@@ -65,7 +65,7 @@ static mut NUM_CPUS: u32 = 1;
 
 /// Initializes the number of CPUs.
 #[safety {
-    Context("BSP has booted", "APs have not booted"),
+    Context("BSP starts", "any AP starts"),
     Valid(num_cpus)
 }]
 unsafe fn init_num_cpus(num_cpus: u32) {
@@ -148,7 +148,7 @@ unsafe impl<T: InAtomicMode> PinCurrentCpu for T {}
 unsafe impl PinCurrentCpu for dyn InAtomicMode + '_ {}
 
 #[safety {
-    Context("BSP has booted", "APs have not booted"),
+    Context("BSP starts", "any AP starts"),
     PostToFunc("`crate::arch::kernel::apic::init`")
     Unaccessed("The CPU-local objects")
 }]
@@ -169,7 +169,7 @@ pub(crate) unsafe fn init_on_bsp() {
 }
 
 #[safety {
-    Context("BSP has booted", "APs have not booted"),
+    Context("BSP starts", "any AP starts"),
     Valid(cpu_id)
 }]
 pub(crate) unsafe fn init_on_ap(cpu_id: u32) {

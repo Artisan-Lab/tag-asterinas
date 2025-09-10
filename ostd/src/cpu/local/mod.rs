@@ -191,7 +191,7 @@ static CPU_LOCAL_STORAGES: Once<&'static [Paddr]> = Once::new();
 /// Copies the static CPU-local data on the bootstrap processor (BSP)
 /// for application processors (APs).
 #[safety {
-    Context("BSP has booted", "APs have not booted"),
+    Context("BSP starts", "any AP starts"),
     Unaccessed("The CPU-local data"),
     Valid(num_cpus)
 }]

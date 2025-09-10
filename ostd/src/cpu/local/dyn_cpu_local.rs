@@ -79,7 +79,7 @@ impl<T> CpuLocal<T, DynamicStorage<T>> {
     /// `DynCpuLocalChunk::alloc`.
     #[safety {
         OriginateFrom("The return value", "an existing [`DynCpuLocalChunk`]"),
-        ValidBy("The return value", "not overlapping with any existing CPU-local object")
+        Memo("The return value should not overlap with any existing CPU-local object")
     }]
     unsafe fn __new_dynamic(ptr: *mut T, init_values: &mut impl FnMut(CpuId) -> T) -> Self {
         let mut storage = DynamicStorage(NonNull::new(ptr).unwrap());

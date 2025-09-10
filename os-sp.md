@@ -11,9 +11,7 @@
 |II.2|Ne(lhs, rhs)|$lhs != rhs$| Precond||
 |II.3|Ge(lhs, rhs)|$lhs >= rhs$| Precond||
 |III.1|Valid(val)|`val` should be valid|Precond||
-|III.2|ValidBy(val, cond)|`val` should be valid by doing sth|Precond||
-|III.4|ValidAs(val, cond)|`val` should be valid as sth|Precond||
-|III.3|ValidFor(val, cond)|`val` should be valid for doing sth|Precond||
+|III.2|ValidFor(val, cond)|`val` should be valid for doing sth|Precond||
 |IV.1|RefHeld(val)|$\exist ref(val)$|Precond||
 |IV.2|RefUnheld(val)|$\neg \exist ref(val)$|Precond||
 |IV.3|RefForgotten(val)|$\Box(Call_{self}(val) \to\textsf{P} Call(func_{forget}) \wedge (val=result))$|Precond||

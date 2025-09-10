@@ -94,7 +94,7 @@ impl<C: PageTableConfig> ChildRef<'_, C> {
     /// node that contains this PTE.
 
     #[safety {
-        PostToFunc("[`Child::into_pte`]"),
+        OriginateFrom(pte, "[`Child::into_pte`]"),
         Valid(level)
     }]
     pub(super) unsafe fn from_pte(pte: &C::E, level: PagingLevel) -> Self {

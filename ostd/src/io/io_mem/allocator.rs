@@ -114,7 +114,7 @@ pub static IO_MEM_ALLOCATOR: Once<IoMemAllocator> = Once::new();
 
 /// Initializes the static `IO_MEM_ALLOCATOR` based on builder.
 #[safety {
-    Memo("All the memory that belong to the system device have been removed by calling the `remove` function."),
+    PostToFunc("`IoMemAllocatorBuilder::remove`"): "All the memory that belong to the system device should have been removed"
 }]
 pub(crate) unsafe fn init(io_mem_builder: IoMemAllocatorBuilder) {
     // SAFETY: The safety is upheld by the caller.

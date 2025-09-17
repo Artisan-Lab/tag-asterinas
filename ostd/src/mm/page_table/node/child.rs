@@ -44,12 +44,12 @@ impl<C: PageTableConfig> Child<C> {
     }
 
     #[safety {
-        CallOnce(pte),
-        Valid(level)
+        CallOnce(pte)
     }]
     #[safety {
         RefUnheld(pte): "For reference created by `ChildRef`"
     }]
+    /// The level must match the original level of the child.
     pub(super) unsafe fn from_pte(pte: C::E, level: PagingLevel) -> Self {
         if !pte.is_present() {
             return Child::None;
@@ -84,19 +84,12 @@ pub(in crate::mm) enum ChildRef<'a, C: PageTableConfig> {
 
 impl<C: PageTableConfig> ChildRef<'_, C> {
     /// Converts a PTE to a child.
-    ///
-    /// # Safety
-    ///
-    /// The PTE must be the output of a [`Child::into_pte`], where the child
-    /// outlives the reference created by this function.
+    #[safety {
+        OriginateFrom(pte, "[`Child::into_pte`]")
+    }]
     ///
     /// The provided level must be the same with the level of the page table
     /// node that contains this PTE.
-
-    #[safety {
-        OriginateFrom(pte, "[`Child::into_pte`]"),
-        Valid(level)
-    }]
     pub(super) unsafe fn from_pte(pte: &C::E, level: PagingLevel) -> Self {
         if !pte.is_present() {
             return ChildRef::None;

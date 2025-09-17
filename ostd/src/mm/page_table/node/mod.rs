@@ -131,7 +131,7 @@ impl<C: PageTableConfig> PageTableNode<C> {
         CallOnce(system)
     }]
     #[safety {
-        Valid("The page table, from the perspective of mapping and level,")
+        Valid("The page table")
     }]
     pub(super) unsafe fn first_activate(&self) {
         use crate::{arch::mm::activate_page_table, mm::CachePolicy};

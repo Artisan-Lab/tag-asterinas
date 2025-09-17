@@ -580,7 +580,7 @@ pub trait PageTableEntryTrait:
 
 /// Loads a page table entry with an atomic instruction.
 #[safety {
-    Memo("The safety preconditions are same as those of [`AtomicUsize::from_ptr`].")
+    ReferTo("[`AtomicUsize::from_ptr`]")
 }]
 pub unsafe fn load_pte<E: PageTableEntryTrait>(ptr: *mut E, ordering: Ordering) -> E {
     // SAFETY: The safety is upheld by the caller.
@@ -591,7 +591,7 @@ pub unsafe fn load_pte<E: PageTableEntryTrait>(ptr: *mut E, ordering: Ordering) 
 
 /// Stores a page table entry with an atomic instruction.
 #[safety {
-    Memo("The safety preconditions are same as those of [`AtomicUsize::from_ptr`].")
+    ReferTo("[`AtomicUsize::from_ptr`]")
 }]
 pub unsafe fn store_pte<E: PageTableEntryTrait>(ptr: *mut E, new_val: E, ordering: Ordering) {
     let new_raw = new_val.as_usize();

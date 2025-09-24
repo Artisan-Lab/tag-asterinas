@@ -1,5 +1,6 @@
 import re
 import os
+import matplotlib.pyplot as plt
 
 cnt = dict()
 
@@ -37,9 +38,23 @@ def count_rust_files(directory: str):
     for file in rust_files:
         count_rust_file(file)
 
+def draw_graph(cnt: dict):
+    fig, ax = plt.subplots(figsize=(15, 12))
+
+    def my_autopct(pct):
+        return ('%1.1f%%' % pct) if pct > 2 else ''
+
+    ax.pie(cnt.values(), 
+            labels=cnt.keys(), 
+            autopct=my_autopct,
+            startangle=90)
+    plt.tight_layout()
+    plt.show()
+
 
 if __name__ == "__main__":
-    init_tags(r"/home/calvin/Desktop/tag-asterinas/ostd/safety-tags.toml")
-    count_rust_files(r"/home/calvin/Desktop/tag-asterinas/ostd/src")
+    init_tags(r"ostd/safety-tags.toml")
+    count_rust_files(r"ostd/src")
     print(cnt)
+    draw_graph(cnt)
     

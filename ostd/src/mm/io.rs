@@ -285,8 +285,8 @@ pub enum Fallible {}
 pub enum Infallible {}
 
 #[safety {
-    ValidFor("`src`", "reads of `len` bytes"),
-    ValidFor("`dst`", "writes of `len` bytes")
+    ValidAccessAddr("`src`", "reads of `len` bytes"),
+    ValidAccessAddr("`dst`", "writes of `len` bytes")
 }]
 unsafe fn memcpy(dst: *mut u8, src: *const u8, len: usize) {
     // This method is implemented by calling `volatile_copy_memory`. Note that even with the
@@ -456,7 +456,7 @@ impl<'a> VmReader<'a, Infallible> {
     /// Constructs a `VmReader` from a pointer and a length, which represents
     /// a memory range in kernel space.
     #[safety {
-        ValidFor("`ptr`", "reads of `len` bytes")
+        ValidAccessAddr("`ptr`", "reads of `len` bytes")
     }]
     pub unsafe fn from_kernel_space(ptr: *const u8, len: usize) -> Self {
         // Rust is allowed to give the reference to a zero-sized object a very small address,
@@ -704,7 +704,7 @@ impl<'a> VmWriter<'a, Infallible> {
     /// [valid]: crate::mm::io#safety
     
     #[safety {
-        ValidFor("`ptr`", "writes of `len` bytes")
+        ValidAccessAddr("`ptr`", "writes of `len` bytes")
     }]
     pub unsafe fn from_kernel_space(ptr: *mut u8, len: usize) -> Self {
         // If casting a zero sized slice to a pointer, the pointer may be null

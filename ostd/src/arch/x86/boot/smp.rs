@@ -54,8 +54,8 @@ use safety::safety;
 #[safety {
     PostToFunc("`crate::boot::EARLY_INFO.call_once`"),
 }]
-pub(crate) unsafe fn count_processors() -> Option<u32> {
-    let acpi_tables = unsafe { get_acpi_tables()? };
+pub(crate) fn count_processors() -> Option<u32> {
+    let acpi_tables = get_acpi_tables()?;
     let madt_table = acpi_tables.find_table::<acpi::madt::Madt>().ok()?;
 
     // According to ACPI spec [1], "If this bit [the Enabled bit] is set the processor is ready for
@@ -119,9 +119,9 @@ pub(crate) unsafe fn count_processors() -> Option<u32> {
 /// 3. the arguments are valid to boot APs.
 #[safety {
     Context("BSP starts", "any AP starts"),
-    ValidFor("`AP_BOOT_START_PA`", "writing AP boot code"), // from copy_ap_boot_code
-    ValidFor(info_ptr, "writing"), // from fill_boot_info_ptr
-    ValidFor(pt_ptr, "writing"), // from fill_boot_pt_ptr
+    ValidAccessAddr("`AP_BOOT_START_PA`", "writing AP boot code"), // from copy_ap_boot_code
+    ValidAccessAddr(info_ptr, "writing"), // from fill_boot_info_ptr
+    ValidAccessAddr(pt_ptr, "writing"), // from fill_boot_pt_ptr
 }]
 pub(crate) unsafe fn bringup_all_aps(info_ptr: *const PerApRawInfo, pt_ptr: Paddr, num_cpus: u32) {
     // SAFETY: The code and data to boot AP is valid to write because
@@ -158,7 +158,7 @@ pub(super) fn reclaimable_memory_region() -> MemoryRegion {
 }
 
 #[safety {
-    ValidFor("`AP_BOOT_START_PA`", "writing AP boot code")
+    ValidAccessAddr("`AP_BOOT_START_PA`", "writing AP boot code")
 }]
 unsafe fn copy_ap_boot_code() {
     let ap_boot_start = __ap_boot_start as usize as *const u8;
@@ -180,7 +180,7 @@ unsafe fn copy_ap_boot_code() {
 }
 
 #[safety {
-    ValidFor(info_ptr, "writing")
+    ValidAccessAddr(info_ptr, "writing")
 }]
 unsafe fn fill_boot_info_ptr(info_ptr: *const PerApRawInfo) {
     extern "C" {
@@ -194,7 +194,7 @@ unsafe fn fill_boot_info_ptr(info_ptr: *const PerApRawInfo) {
 }
 
 #[safety {
-    ValidFor(pt_ptr, "writing")
+    ValidAccessAddr(pt_ptr, "writing")
 }]
 unsafe fn fill_boot_pt_ptr(pt_ptr: Paddr) {
     extern "C" {
@@ -219,9 +219,9 @@ extern "C" {
 ///
 #[safety {
     Context("BSP starts", "any AP starts"),
-    PostToFunc("`copy_ap_boot_code`"),
-    PostToFunc("`fill_boot_info_ptr`"),
-    PostToFunc("`fill_boot_pt_ptr`"): "We've properly prepared all the resources for the application processors to boot successfully"
+    PostToFunc("[`copy_ap_boot_code`]"),
+    PostToFunc("[`fill_boot_info_ptr`]"),
+    PostToFunc("[`fill_boot_pt_ptr`]"): "We've properly prepared all the resources for the application processors to boot successfully"
 }]
 #[cfg(feature = "cvm_guest")]
 unsafe fn wake_up_aps_via_mailbox(num_cpus: u32) {
@@ -237,7 +237,7 @@ unsafe fn wake_up_aps_via_mailbox(num_cpus: u32) {
 
     let offset = ap_boot_from_long_mode as usize - ap_boot_from_real_mode as usize;
 
-    let acpi_tables = unsafe { get_acpi_tables().unwrap() };
+    let acpi_tables = get_acpi_tables().unwrap();
     for ap_num in 1..num_cpus {
         wakeup_aps(
             &acpi_tables,
@@ -260,9 +260,9 @@ unsafe fn wake_up_aps_via_mailbox(num_cpus: u32) {
 ///
 #[safety {
     Context("BSP starts", "any AP starts"),
-    PostToFunc("`copy_ap_boot_code`"),
-    PostToFunc("`fill_boot_info_ptr`"),
-    PostToFunc("`fill_boot_pt_ptr`"): "We've properly prepared all the resources for the application processors to boot successfully"
+    PostToFunc("[`copy_ap_boot_code`]"),
+    PostToFunc("[`fill_boot_info_ptr`]"),
+    PostToFunc("[`fill_boot_pt_ptr`]"): "We've properly prepared all the resources for the application processors to boot successfully."
 }]
 unsafe fn send_boot_ipis() {
     let preempt_guard = disable_preempt();

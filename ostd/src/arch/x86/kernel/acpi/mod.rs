@@ -42,10 +42,8 @@ impl AcpiHandler for AcpiMemoryHandler {
 #[safety {
     PostToFunc("`crate::boot::EARLY_INFO.call_once`"),
 }]
-pub(crate) unsafe fn get_acpi_tables() -> Option<AcpiTables<AcpiMemoryHandler>> {
+pub(crate) fn get_acpi_tables() -> Option<AcpiTables<AcpiMemoryHandler>> {
     let acpi_tables = match boot::EARLY_INFO.get().unwrap().acpi_arg {
-        // Safety Discharge:
-        // The address is parsed from authenticated boot data.
         BootloaderAcpiArg::Rsdp(addr) => unsafe {
             AcpiTables::from_rsdp(AcpiMemoryHandler {}, addr).unwrap()
         },

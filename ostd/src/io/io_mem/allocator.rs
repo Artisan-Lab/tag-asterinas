@@ -37,13 +37,10 @@ impl IoMemAllocator {
     }
 
     /// Recycles an MMIO range.
-    ///
-    /// # Safety
-    ///
-    /// The caller must have ownership of the MMIO region through the `IoMemAllocator::get` interface.
     #[expect(dead_code)]
     #[safety {
-        PostToFunc("`IoMemAllocator::get`"): "With the ownership of the MMIO region"
+        PostToFunc("`IoMemAllocator::get`"),
+        OwnedResource("MMIO region")
     }]
     pub(in crate::io) unsafe fn recycle(&self, range: Range<usize>) {
         let allocator = find_allocator(&self.allocators, &range).unwrap();

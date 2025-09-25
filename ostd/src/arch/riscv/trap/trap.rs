@@ -54,7 +54,7 @@ global_asm!(include_str!("trap.S"));
 /// - Set `stvec` to internal exception vector.
 ///
 #[safety {
-    Unaltered("`sscratch` and `stvec`")
+    NonModifying("`sscratch` and `stvec`")
 }]
 pub unsafe fn init() {
     // Set sscratch register to 0, indicating to exception vector that we are

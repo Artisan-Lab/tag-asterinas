@@ -66,7 +66,7 @@ static mut NUM_CPUS: u32 = 1;
 /// Initializes the number of CPUs.
 #[safety {
     Context("BSP starts", "any AP starts"),
-    Valid(num_cpus)
+    Valid(num_cpus): "The argument is the correct value of the number of CPUs."
 }]
 unsafe fn init_num_cpus(num_cpus: u32) {
     assert!(num_cpus >= 1);
@@ -107,8 +107,10 @@ cpu_local_cell! {
 
 /// Initializes the current CPU ID.
 #[safety {
-    CallOnce(processor),
-    Valid("`id`"): "During the early boot phase"
+    CallOnce(processor): "During the early boot phase"
+}]
+#[safety {
+    Valid("`id`"): "The caller must ensure that this function is called with the correct value of the CPU ID."
 }]
 unsafe fn set_this_cpu_id(id: u32) {
     // FIXME: If there are safe APIs that rely on the correctness of
@@ -170,7 +172,7 @@ pub(crate) unsafe fn init_on_bsp() {
 
 #[safety {
     Context("BSP starts", "any AP starts"),
-    Valid(cpu_id)
+    Valid(cpu_id): "The argument is the correct CPU ID of the AP."
 }]
 pub(crate) unsafe fn init_on_ap(cpu_id: u32) {
     // SAFETY: The safety is upheld by the caller.

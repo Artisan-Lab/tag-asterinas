@@ -29,7 +29,7 @@ fn parse_kernel_commandline(mb1_info: &MultibootLegacyInfo) -> Option<&str> {
 }
 
 #[safety {
-    ReferTo("`core::ffi::CStr::from_ptr`")
+    ReferTo("`core::ffi::CStr::from_ptr`"): "Refer to: [core::ffi::CStr::from_ptr](https://doc.rust-lang.org/stable/core/ffi/struct.CStr.html#method.from_ptr)"
 }]
 unsafe fn parse_as_cstr<'a>(ptr: u32) -> Option<&'a str> {
     if ptr == 0 {

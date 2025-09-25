@@ -83,7 +83,7 @@ impl HwCpuId {
 /// Sends a general inter-processor interrupt (IPI) to the specified CPU.
 #[safety {
     Valid(irq_num),
-    ValidFor("The remote handler", "safely invoking on the remote CPU")
+    Memo("The corresponding handler is configured correctly on the remote CPU and invoking the interrupt handler must also be safe.")
 }]
 pub(crate) unsafe fn send_ipi(hw_cpu_id: HwCpuId, irq_num: u8, guard: &dyn PinCurrentCpu) {
     unimplemented!()

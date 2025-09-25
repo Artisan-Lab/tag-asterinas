@@ -40,7 +40,7 @@ impl IoApic {
     const TABLE_REG_BASE: u8 = 0x10;
 
     #[safety {
-        ValidAddr(base_address, "I/O APIC base")
+        ValidBaseAddr(base_address, "I/O APIC")
     }]
     pub(super) unsafe fn new(
         base_address: usize,
@@ -143,7 +143,7 @@ struct IoApicAccess {
 
 impl IoApicAccess {
     #[safety {
-        ValidAddr(base_address, "I/O APIC base")
+        ValidBaseAddr(base_address, "I/O APIC")
     }]
     pub(self) unsafe fn new(base_address: usize, io_mem_builder: &IoMemAllocatorBuilder) -> Self {
         io_mem_builder.remove(base_address..(base_address + 0x20));

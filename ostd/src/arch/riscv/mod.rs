@@ -24,7 +24,7 @@ pub(crate) fn init_cvm_guest() {
 
 
 #[safety {
-    Unaltered("`sscratch` and `stvec`"), // from trap::init
+    NonModifying("`sscratch` and `stvec`"), // from trap::init
     Context("BSP starts", "any AP starts"), // from crate::boot::smp::boot_all_aps
     CallOnce("system"), // from timer::init
     NotPostToFunc("any other public functions of timer module"),  // from timer::init

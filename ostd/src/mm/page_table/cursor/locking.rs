@@ -249,8 +249,8 @@ unsafe fn dfs_release_lock<'rcu, C: PageTableConfig>(
 /// top level nodes that the kernel space and user space share.
 #[safety {
     NotPostToFunc("[`locking::unlock_range`]"),
-    NotPostToFunc(dfs_mark_stray_and_unlock),
-    NotPostToFunc(dfs_release_lock),
+    NotPostToFunc("[`dfs_mark_stray_and_unlock`]"),
+    NotPostToFunc("[`dfs_release_lock`]"),
     RefForgotten(sub_tree) : "For sub_tree"
 }]
 pub(super) unsafe fn dfs_mark_stray_and_unlock<C: PageTableConfig>(

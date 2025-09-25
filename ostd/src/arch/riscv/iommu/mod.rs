@@ -12,7 +12,7 @@ pub(crate) enum IommuError {
 }
 
 #[safety {
-    ValidFor(_paddr, mapping): "Mapping an incorrect address may lead to a kernel data leak"
+    Valid(_paddr): "Mapping an incorrect address may lead to a kernel data leak"
 }]
 pub(crate) unsafe fn map(_daddr: Daddr, _paddr: Paddr) -> Result<(), IommuError> {
     Err(IommuError::NoIommu)

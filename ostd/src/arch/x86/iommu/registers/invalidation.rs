@@ -34,8 +34,8 @@ pub struct InvalidationRegisters {
 impl InvalidationRegisters {
     /// Creates an instance from the IOMMU base address.
     #[safety {
-        Valid(base),
-        Memo("it has exclusive ownership of the IOMMU invalidation registers.")
+        ValidBaseAddr(base, "IOMMU"),
+        OwnedResource("The IOMMU invalidation registers")
     }]
     pub(super) unsafe fn new(base: NonNull<u8>) -> Self {
         let offset = {

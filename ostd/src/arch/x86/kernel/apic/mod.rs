@@ -48,11 +48,8 @@ pub fn get_or_init(_guard: &dyn PinCurrentCpu) -> &(dyn Apic + 'static) {
     unsafe impl<T> Send for ForceSyncSend<T> {}
 
     impl<T> ForceSyncSend<T> {
-        /// # Safety
-        ///
-        /// The caller must ensure that its context allows for safe access to `&T`.
         #[safety {
-            ValidFor("`&T`", "access")
+            Memo("The caller must ensure that its context allows for safe access to `&T`.")
         }]
         unsafe fn get(&self) -> &T {
             &self.0

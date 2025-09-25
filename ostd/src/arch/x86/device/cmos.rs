@@ -26,7 +26,7 @@ sensitive_io_port!(unsafe {
 
 /// Gets the century register location. This function is used in RTC(Real Time Clock) module initialization.
 pub fn century_register() -> Option<u8> {
-    let acpi_tables = unsafe { get_acpi_tables()? };
+    let acpi_tables = get_acpi_tables()?;
     match acpi_tables.find_table::<Fadt>() {
         Ok(a) => Some(a.century),
         Err(er) => None,

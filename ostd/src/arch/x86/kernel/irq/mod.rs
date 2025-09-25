@@ -166,7 +166,7 @@ pub(in crate::arch) fn init(io_mem_builder: &IoMemAllocatorBuilder) {
     // the I/O APIC, we may need to find another way to determine the I/O APIC address
     // correctly and reliably (e.g., by parsing the MultiProcessor Specification, which has
     // been deprecated for a long time and may not even exist in modern hardware).
-    let acpi_tables = unsafe { get_acpi_tables().unwrap() };
+    let acpi_tables = get_acpi_tables().unwrap();
     let madt_table = acpi_tables.find_table::<Madt>().unwrap();
 
     // "A one indicates that the system also has a PC-AT-compatible dual-8259 setup. The 8259

@@ -24,7 +24,7 @@ pub fn has_dma_remapping() -> bool {
 
 /// Mapping device address to physical address.
 #[safety {
-    Valid(paddr)
+    Valid(paddr): "Mapping an incorrect address may lead to a kernel data leak."
 }]
 pub unsafe fn map(daddr: Daddr, paddr: Paddr) -> Result<(), IommuError> {
     let Some(table) = PAGE_TABLE.get() else {

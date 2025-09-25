@@ -31,7 +31,7 @@ fn parse_kernel_commandline(mb2_info: &BootInformation) -> Option<&'static str> 
 }
 
 #[safety {
-    ReferTo("`core::str::from_utf8`")
+    ReferTo("`core::slice::from_raw_parts`"): "Refer to [core::slice::from_raw_parts](https://doc.rust-lang.org/core/slice/fn.from_raw_parts.html#safety)"
 }]
 unsafe fn make_str_vaddr_static(str: &str) -> &'static str {
     let vaddr = paddr_to_vaddr(str.as_ptr() as Paddr);

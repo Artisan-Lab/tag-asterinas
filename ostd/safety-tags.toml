@@ -15,7 +15,7 @@ types = [ "hazard" ]
 desc = "This function should not be executed before {func}."
 
 [tag.CallOnce]
-args = [ "scope" ] #scope ∈ {system, core}
+args = [ "scope" ]
 desc = "This function should be called only once per {scope}."
 
 [tag.Context]
@@ -45,13 +45,13 @@ desc = "{lhs} should be greater than or equal to {rhs}."
 args = [ "val" ]
 desc = "{val} should be valid."
 
-[tag.ValidFor]
-args = [ "val", "doing" ]
-desc = "{val} should be valid for {doing}."
+[tag.ValidAccessAddr]
+args = [ "val", "access" ]
+desc = "{val} should be valid for {access}."
 
-[tag.ValidAddr]
+[tag.ValidBaseAddr]
 args = [ "val", "something" ]
-desc = "{val} should be a valid address of {something}."
+desc = "{val} should be a valid base address of {something}."
 
 [tag.ValidInstance]
 args = [ "val", "something" ]
@@ -69,6 +69,10 @@ desc = "The caller must not hold the reference to {val}."
 [tag.RefForgotten]
 args = [ "val" ]
 desc = "{val} must be forgotten by [`core::mem::forget`], [`ManuallyDrop`], or [`into_raw`]."
+
+[tag.OwnedResource]
+args = [ "val" ]
+desc = "{val} shoule be exclusively owned."
 
 #Memory
 [tag.UserSpace]
@@ -91,10 +95,10 @@ args = [ "val" ]
 types = [ "hazard" ]
 desc = "The caller should have exclusive mutable access to {val}."
 
-[tag.Unaltered]
+[tag.NonModifying]
 args = [ "val" ]
 types = [ "hazard" ]
-desc = "{val} should not be altered."
+desc = "{val} should not be modified after calling the function."
 
 [tag.Unaccessed]
 args = [ "val" ]

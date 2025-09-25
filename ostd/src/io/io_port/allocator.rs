@@ -43,7 +43,8 @@ impl IoPortAllocator {
 
     /// Recycles an PIO range.
     #[safety {
-        PostToFunc("`IoPortAllocator::acquire`"): "With the ownership of the PIO region"
+        PostToFunc("`IoPortAllocator::acquire`"),
+        OwnedResource("PIO region")
     }]
     pub(in crate::io) unsafe fn recycle(&self, range: Range<u16>) {
         debug!("Recycling MMIO range: {:#x?}", range);

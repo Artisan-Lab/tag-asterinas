@@ -96,7 +96,7 @@ pub struct PageTableEntry(usize);
 /// so `_root_pt_cache` is ignored.
 ///
 #[safety {
-    ValidInstance(root_paddr, "a level 4 page table"): "Changing the level 4 page table is unsafe, because it's possible to violate memory safety by changing the page mapping"
+    ValidInstanceAddr(root_paddr, "a level 4 page table"): "Changing the level 4 page table is unsafe, because it's possible to violate memory safety by changing the page mapping"
 }]
 pub unsafe fn activate_page_table(root_paddr: Paddr, _root_pt_cache: CachePolicy) {
     assert!(root_paddr % PagingConsts::BASE_PAGE_SIZE == 0);

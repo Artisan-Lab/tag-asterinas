@@ -204,7 +204,7 @@ fn dfs_acquire_lock<C: PageTableConfig>(
 #[safety {
     NotPostToFunc(dfs_mark_stray_and_unlock),
     NotPostToFunc(dfs_release_lock),
-    RefForgotten(cur_node) : "For cur_node:"
+    Forgotten(cur_node) : "For cur_node:"
 }]
 unsafe fn dfs_release_lock<'rcu, C: PageTableConfig>(
     guard: &'rcu dyn InAtomicMode,
@@ -251,7 +251,7 @@ unsafe fn dfs_release_lock<'rcu, C: PageTableConfig>(
     NotPostToFunc("[`locking::unlock_range`]"),
     NotPostToFunc("[`dfs_mark_stray_and_unlock`]"),
     NotPostToFunc("[`dfs_release_lock`]"),
-    RefForgotten(sub_tree) : "For sub_tree"
+    Forgotten(sub_tree) : "For sub_tree"
 }]
 pub(super) unsafe fn dfs_mark_stray_and_unlock<C: PageTableConfig>(
     rcu_guard: &dyn InAtomicMode,

@@ -112,7 +112,7 @@ impl<M: AnyFrameMeta> Segment<M> {
 
     /// Restores the [`Segment`] from the raw physical address range.
     #[safety {
-        RefForgotten("The segment"): "For a Segment matching the type `M` derived from range"
+        Forgotten("The segment"): "For a Segment matching the type `M` derived from range"
     }]
     pub(crate) unsafe fn from_raw(range: Range<Paddr>) -> Self {
         debug_assert_eq!(range.start % PAGE_SIZE, 0);

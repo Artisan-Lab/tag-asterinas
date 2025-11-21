@@ -16,6 +16,7 @@ desc = "This function should not be executed before {func}."
 
 [tag.CallOnce]
 args = [ "scope" ]
+types = [ "hazard" ]
 desc = "This function should be called only once per {scope}."
 
 [tag.Context]
@@ -46,29 +47,25 @@ args = [ "val" ]
 desc = "{val} should be valid."
 
 [tag.ValidAccessAddr]
-args = [ "val", "access" ]
-desc = "{val} should be valid for {access}."
+args = [ "addr", "access" ]
+desc = "{addr} should be valid for {access}."
 
 [tag.ValidBaseAddr]
-args = [ "val", "something" ]
-desc = "{val} should be a valid base address of {something}."
+args = [ "addr", "hardware" ]
+desc = "{addr} should be a valid base address of {hardware}."
 
-[tag.ValidInstance]
-args = [ "val", "something" ]
-desc = "{val} should be a valid instance of {something}."
+[tag.ValidInstanceAddr]
+args = [ "addr", "type" ]
+desc = "{addr} should point to a valid instance of {type}."
 
 #Reference
 [tag.RefHeld]
 args = [ "val" ]
-desc = "The caller must have already held a reference to {val}."
+desc = "A reference to {val} should have been held."
 
 [tag.RefUnheld]
 args = [ "val" ]
-desc = "The caller must not hold the reference to {val}."
-
-[tag.RefForgotten]
-args = [ "val" ]
-desc = "{val} must be forgotten by [`core::mem::forget`], [`ManuallyDrop`], or [`into_raw`]."
+desc = "Any reference to {val} should not have been held."
 
 [tag.OwnedResource]
 args = [ "val" ]
@@ -90,6 +87,10 @@ types = [ "hazard" ]
 dsec = "{val} should reside in {section}."
 
 #Misc
+[tag.Forgotten]
+args = [ "val" ]
+desc = "{val} must be forgotten by [`core::mem::forget`], [`ManuallyDrop`], or [`into_raw`]."
+
 [tag.MutAccess]
 args = [ "val" ]
 types = [ "hazard" ]

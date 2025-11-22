@@ -103,7 +103,7 @@ desc = "{val} should not be modified after calling the function."
 
 [tag.Unaccessed]
 args = [ "val" ]
-desc = "{val} should bot be accessed."
+desc = "{val} should not be accessed."
 
 [tag.Bounded]
 args = [ "val", "bound" ]

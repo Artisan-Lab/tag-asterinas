@@ -218,10 +218,7 @@ extern "C" {
 /// Wakes up all application processors via the ACPI multiprocessor mailbox structure.
 ///
 #[safety {
-    Context("BSP starts", "any AP starts"),
-    PostToFunc("[`copy_ap_boot_code`]"),
-    PostToFunc("[`fill_boot_info_ptr`]"),
-    PostToFunc("[`fill_boot_pt_ptr`]"): "We've properly prepared all the resources for the application processors to boot successfully"
+    ReferTo("`send_boot_ipis`")
 }]
 #[cfg(feature = "cvm_guest")]
 unsafe fn wake_up_aps_via_mailbox(num_cpus: u32) {

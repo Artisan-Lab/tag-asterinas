@@ -197,7 +197,6 @@ pub(super) fn get_global_frame_allocator() -> &'static dyn GlobalFrameAllocator 
 
 #[safety {
     CallOnce(system),
-    PostToFunc("`crate::boot::EARLY_INFO.call_once`"),
     PostToFunc("[`init_early_allocator`]")
 }]
 pub(crate) unsafe fn init() {
@@ -357,8 +356,7 @@ pub(crate) fn early_alloc(layout: Layout) -> Option<Paddr> {
 /// early allocator.
 
 #[safety {
-    CallOnce(system),
-    PostToFunc("`crate::boot::EARLY_INFO.call_once`")
+    CallOnce(system)
 }]
 pub(crate) unsafe fn init_early_allocator() {
     let mut early_allocator = EARLY_ALLOCATOR.lock();

@@ -23,7 +23,6 @@ desc = "This function should be called only once per {scope}."
 args = [ "after", "before" ]
 desc = "This function should be executed after {after} before {before}."
 
-# Data Dependency
 [tag.OriginateFrom]
 args = [ "val", "func" ]
 desc = "{val} should originate from {func}."

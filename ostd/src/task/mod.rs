@@ -163,10 +163,12 @@ impl TaskOptions {
     pub fn build(self) -> Result<Task> {
         // All tasks will enter this function. It is meant to execute the `task_fn` in `Task`.
         //
+        // # Safety
+        //
         // We provide an assembly wrapper for this function as the end of call stack so we
         // have to disable name mangling for it.
         #[no_mangle]
-        extern "C" fn kernel_task_entry() -> ! {
+        unsafe extern "C" fn kernel_task_entry() -> ! {
             // SAFETY: The new task is switched on a CPU for the first time, `after_switching_to`
             // hasn't been called yet.
             unsafe { processor::after_switching_to() };

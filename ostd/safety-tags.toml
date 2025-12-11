@@ -52,7 +52,7 @@ desc = "{addr} should be valid for {access}."
 
 [tag.ValidBaseAddr]
 args = [ "addr", "hardware" ]
-desc = "{addr} should be a valid base address of {hardware}."
+desc = "`{addr}` must be a valid base address of {hardware}."
 
 [tag.ValidInstanceAddr]
 args = [ "addr", "type" ]
@@ -68,8 +68,8 @@ args = [ "val" ]
 desc = "Any reference to {val} should not have been held."
 
 [tag.OwnedResource]
-args = [ "val" ]
-desc = "{val} shoule be exclusively owned."
+args = [ "value", "owner" ]
+desc = "`{value}` must be exclusively owned by {owner}."
 
 #Memory
 [tag.UserSpace]
